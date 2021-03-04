@@ -7,6 +7,7 @@ import {
 import { assert, expect } from "chai";
 import { ADDR1, ADDR2 } from "../mocknet";
 import * as c32 from "c32check";
+import { ADDR_STACKS_TO_BITCOIN } from "../deploy";
 
 describe("xverse contract test suite", () => {
   let client: Client;
