@@ -131,10 +131,22 @@ describe("pool flow suite", () => {
   });
 
   it("deploys", async () => {
+    const stackingClient = new StackingClient(poolAdmin.stacks, network);
+    const poxInfo = await stackingClient.getPoxInfo();
+    const rewardCylceLength = poxInfo.reward_cycle_length;
+    const firstBurnchainBlockHeight = poxInfo.first_burnchain_block_height;
+    const prepareCycleLength = (poxInfo as any).prepare_cycle_length;
+
     const result = await deployContract(
       xverseContractName,
       `./contracts/${xverseContractName}.clar`,
-      (s) => s,
+      (s) =>
+        mainnet
+          ? s.replace(
+              /ST000000000000000000002AMW42H/g,
+              "SP000000000000000000002Q6VF78"
+            )
+          : s,
       poolAdmin.private
     );
     expect(result, result).to.be.a("string");
@@ -251,11 +263,11 @@ describe("pool flow suite", () => {
     console.log(JSON.stringify(status2));
   });
 
-  it.only("get payout list", async () => {
+  it("get payout list", async () => {
     const stackingClient = new StackingClient(poolAdmin.stacks, network);
     const poxInfo = await stackingClient.getPoxInfo();
     console.log(poxInfo.reward_cycle_id);
-    const rewardCycle = 0;
+    const rewardCycle = 1;
     const length = await callReadOnlyFunction({
       contractAddress: xverseContractAddress,
       contractName: xverseContractName,
@@ -273,6 +285,6 @@ describe("pool flow suite", () => {
       senderAddress: poolAdmin.stacks,
       network,
     });
-    console.log({ list });
+    console.log(JSON.stringify(list));
   });
 });

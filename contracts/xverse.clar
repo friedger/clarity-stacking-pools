@@ -139,6 +139,6 @@
 )
 
 (define-read-only (get-status-list (reward-cycle uint) (index uint))
-  (map-get? stackers-by-start-cycle-len reward-cycle)
+  (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: index})
 )
 
