@@ -2,6 +2,7 @@
 // utils functions
 
 import {
+  addressHashModeToVersion,
   broadcastTransaction,
   makeContractDeploy,
   makeSTXTokenTransfer,
@@ -42,17 +43,16 @@ export const user = mainnet
   ? JSON.parse(fs.readFileSync("../mainnet.json").toString())
   : testnetKeyMap[ADDR1];
 
-export var ADDR_STACKS_TO_BITCOIN = {};
-ADDR_STACKS_TO_BITCOIN[c32.versions.mainnet.p2pkh] = 0;
-ADDR_STACKS_TO_BITCOIN[c32.versions.mainnet.p2sh] = 5;
-ADDR_STACKS_TO_BITCOIN[c32.versions.testnet.p2pkh] = 111;
-ADDR_STACKS_TO_BITCOIN[c32.versions.testnet.p2sh] = 196;
+export var VERSION_TO_HASH_MODE = {};
+VERSION_TO_HASH_MODE[c32.versions.mainnet.p2pkh] = 0;
+VERSION_TO_HASH_MODE[c32.versions.mainnet.p2sh] = 1;
+VERSION_TO_HASH_MODE[c32.versions.testnet.p2pkh] = 0;
+VERSION_TO_HASH_MODE[c32.versions.testnet.p2sh] = 1;
 
 //
 export async function handleTransaction(transaction: StacksTransaction) {
-  console.log(network);
   const result = await broadcastTransaction(transaction, network);
-  console.log(result);
+  console.log("tx:", result);
   if ((result as TxBroadcastResultRejected).error) {
     if (
       (result as TxBroadcastResultRejected).reason === "ContractAlreadyExists"
@@ -73,7 +73,6 @@ export async function handleTransaction(transaction: StacksTransaction) {
       `failed to process transaction ${transaction.txid}: transaction not found`
     );
   }
-  console.log(processed, result);
   return result as TxBroadcastResultOk;
 }
 
@@ -110,7 +109,10 @@ export function timeout(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function processing(tx: String, count: number = 0): Promise<boolean> {
+export async function processing(
+  tx: String,
+  count: number = 0
+): Promise<boolean> {
   return noSidecar
     ? processingWithoutSidecar(tx, count)
     : processingWithSidecar(tx, count);

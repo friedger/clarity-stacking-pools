@@ -7,7 +7,7 @@ import {
 import { assert, expect } from "chai";
 import { ADDR1, ADDR2 } from "../mocknet";
 import * as c32 from "c32check";
-import { ADDR_STACKS_TO_BITCOIN } from "../deploy";
+import { VERSION_TO_HASH_MODE } from "../deploy";
 
 describe("xverse contract test suite", () => {
   let client: Client;
@@ -49,9 +49,9 @@ describe("xverse contract test suite", () => {
           args: [
             `u${amountUstx}`,
             `'${delegateTo}`,
-            untilBurnHt ? `(some u${amountUstx})` : "none",
+            untilBurnHt ? `(some u${untilBurnHt})` : "none",
             "none",
-            `(tuple (hashbytes 0x${hashbytes}) (version 0x${ADDR_STACKS_TO_BITCOIN[
+            `(tuple (hashbytes 0x${hashbytes}) (version 0x${VERSION_TO_HASH_MODE[
               version
             ].toString(16)}))`,
             "u2",
@@ -62,6 +62,17 @@ describe("xverse contract test suite", () => {
       const receipt = await client.submitTransaction(tx);
       expect(receipt.success, JSON.stringify(receipt)).to.be.true;
     });
+  });
+
+  it("should get stacker status", async () => {
+    const q = client.createQuery({
+      method: {
+        name: "get-status",
+        args: [`'${ADDR2}`],
+      },
+    });
+    const result = await client.submitQuery(q);
+    expect(result.success, JSON.stringify(result)).to.be.true;
   });
 
   after(async () => {

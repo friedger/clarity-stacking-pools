@@ -3,6 +3,8 @@
 (define-constant err-map-set-failed u101)
 (define-constant err-pox-failed u102)
 (define-constant err-delegate-below-minimum u103)
+(define-constant err-missing-user u104)
+
 
 (define-constant PREPARE_CYCLE_LENGTH u100)
 (define-constant REWARD_CYCLE_LENGTH u2100)
@@ -12,6 +14,9 @@
 (define-data-var pox-prepare-cycle-length uint PREPARE_CYCLE_LENGTH)
 
 (define-map user-data principal {pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint})
+(define-map stackers-by-start-cycle {reward-cycle: uint, index: uint}
+  (list 30 {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
+(define-map stackers-by-start-cycle-len uint uint)
 
 ;; What's the reward cycle number of the burnchain block height?
 ;; Will runtime-abort if height is less than the first burnchain block (this is intentional)
@@ -26,6 +31,8 @@
 (define-private (current-pox-reward-cycle)
     (burn-height-to-reward-cycle burn-block-height))
 
+(define-private (pox-get-stacker-info (user principal))
+   (contract-call? 'ST000000000000000000002AMW42H.pox get-stacker-info user))
 
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
   (if (> amount-ustx u100)
@@ -36,6 +43,67 @@
       ))
     (err {kind: "permission-denied", code: err-delegate-below-minimum})))
 
+(define-private (min (amount-1 uint) (amount-2 uint))
+  (if (< amount-1 amount-2)
+    amount-1
+    amount-2))
+
+(define-private (asserts-panic (value bool))
+  (unwrap-panic (if value (some true) none)))
+
+(define-private (merge-details (stacker {lock-amount: uint, stacker: principal, unlock-burn-height: uint}) (user {pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
+  {lock-amount: (get lock-amount stacker),
+  stacker: (get stacker stacker),
+  unlock-burn-height: (get unlock-burn-height stacker),
+  pox-addr: (get pox-addr user),
+  cycle: (get cycle user),
+  locking-period: (get locking-period user)})
+
+(define-private (insert-in-new-list (reward-cycle uint) (last-index uint) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
+  (let ((index (+ last-index u1)))
+    (asserts-panic (map-insert stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: index}) (list details)))
+    (asserts-panic (map-set stackers-by-start-cycle-len reward-cycle index))))
+
+(define-private (append-details (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
+  (let ((reward-cycle (+ (burn-height-to-reward-cycle burn-block-height) u1)))
+    (let ((last-index (default-to u0 (map-get? stackers-by-start-cycle-len reward-cycle))))
+      (match (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: last-index})
+        stackers (match (as-max-len? (append stackers details) u30)
+                new-list (map-set stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) new-list)
+                (insert-in-new-list reward-cycle last-index details))
+        (map-insert stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) (list details))))))
+
+(define-private (pox-delegate-stack-stx (details {user: principal, amount-ustx: uint})
+                  (context (tuple
+                      (pox-address (tuple (hashbytes (buff 20)) (version (buff 1))))
+                      (start-burn-ht uint)
+                      (lock-period uint)
+                      (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) (tuple (kind (string-ascii 32)) (code uint))))))))
+  (let ((user (get user details)))
+    (let ((pox-address (get pox-address context))
+        (start-burn-ht (get start-burn-ht context))
+        (lock-period (get lock-period context))
+        (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
+      (if (> amount-ustx u0)
+        (let ((stack-result
+          (match (contract-call? 'ST000000000000000000002AMW42H.pox delegate-stack-stx
+                      user amount-ustx
+                      pox-address start-burn-ht lock-period)
+            stacker-details (match (map-get? user-data user)
+                        user-details (begin
+                          (append-details (merge-details stacker-details user-details))
+                          (ok stacker-details))
+                        (err {kind: "user-not-found", code: err-missing-user}))
+            error (err {kind: "native-function-failed", code: (to-uint error)}))))
+          {pox-address: pox-address,
+            start-burn-ht: start-burn-ht,
+            lock-period: lock-period,
+            result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))})
+        {pox-address: pox-address,
+          start-burn-ht: start-burn-ht,
+          lock-period: lock-period,
+          result: (get result context)}
+      ))))
 
 (define-public (delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint))
               (pool-pox-addr (optional (tuple (hashbytes (buff 20)) (version (buff 1)))))
@@ -48,6 +116,29 @@
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
 
-(define-read-only (get-user-data (user principal))
-  (map-get? user-data user)
+
+(define-public (delegate-stack-stx (users (list 30 (tuple
+                                      (user principal)
+                                      (amount-ustx uint))))
+                                    (pox-address { version: (buff 1), hashbytes: (buff 20) })
+                                    (start-burn-ht uint)
+                                    (lock-period uint))
+    (let ((stack-result (get result (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))))
+      (ok stack-result)))
+
+
+(define-read-only (get-status (user principal))
+  (match (pox-get-stacker-info user)
+    stacker-info  (match (map-get? user-data user)
+      user-info (ok {stacker-info: stacker-info, user-info: user-info})
+      (err {kind: "no-user-info"}))
+    (err {kind: "no-stacker-info"})))
+
+(define-read-only (get-status-list-length (reward-cycle uint))
+  (map-get? stackers-by-start-cycle-len reward-cycle)
 )
+
+(define-read-only (get-status-list (reward-cycle uint) (index uint))
+  (map-get? stackers-by-start-cycle-len reward-cycle)
+)
+
