@@ -146,6 +146,33 @@ function generateUsers(count: number) {
   return users;
 }
 
+async function delegateStackStx(users, amount) {
+  const stackingClient = new StackingClient(user.stacks, network);
+  const info = await stackingClient.getCoreInfo();
+  const functionArgs = [
+    listCV(
+      users.map((u) =>
+        tupleCV({
+          user: standardPrincipalCV(u.stacks),
+          "amount-ustx": uintCV(amount),
+        })
+      )
+    ),
+    poxAddrCV(poolAdmin.stacks),
+    uintCV(info.burn_block_height + 1),
+    uintCV(2),
+  ];
+  const tx = await makeContractCall({
+    contractAddress: xverseContractAddress,
+    contractName: xverseContractName,
+    functionName: "delegate-stack-stx",
+    functionArgs,
+    network,
+    senderKey: poolAdmin.private,
+  });
+  const result = handleTransaction(tx);
+  console.log(result);
+}
 describe("pool flow suite", () => {
   before(() => {
     console.log(network);
@@ -221,30 +248,10 @@ describe("pool flow suite", () => {
     }
 
     // delegate-stack-stx
-    const info = await stackingClient.getCoreInfo();
-    const functionArgs = [
-      listCV(
-        users.map((u) =>
-          tupleCV({
-            user: standardPrincipalCV(u.stacks),
-            "amount-ustx": uintCV(amount),
-          })
-        )
-      ),
-      poxAddrCV(poolAdmin.stacks),
-      uintCV(info.burn_block_height + 1),
-      uintCV(2),
-    ];
-    const tx = await makeContractCall({
-      contractAddress: xverseContractAddress,
-      contractName: xverseContractName,
-      functionName: "delegate-stack-stx",
-      functionArgs,
-      network,
-      senderKey: poolAdmin.private,
-    });
-    const result = handleTransaction(tx);
-    console.log(result);
+    await delegateStackStx(users.slice(0, 30), amount);
+    await delegateStackStx(users.slice(30, 60), amount);
+    await delegateStackStx(users.slice(60), amount);
+
     const poxInfo = await stackingClient.getPoxInfo();
     const commitTx = await stackingClient.stackAggregationCommit({
       poxAddress: c32.c32ToB58(poolAdmin.stacks),
