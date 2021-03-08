@@ -4,6 +4,7 @@
 (define-constant err-pox-failed u102)
 (define-constant err-delegate-below-minimum u103)
 (define-constant err-missing-user u104)
+(define-constant err-non-positive-amount u105)
 
 
 (define-constant PREPARE_CYCLE_LENGTH u100)
@@ -17,6 +18,7 @@
 (define-map stackers-by-start-cycle {reward-cycle: uint, index: uint}
   (list 30 {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
 (define-map stackers-by-start-cycle-len uint uint)
+(define-map totals-by-start-cycle uint uint)
 
 ;; What's the reward cycle number of the burnchain block height?
 ;; Will runtime-abort if height is less than the first burnchain block (this is intentional)
@@ -64,14 +66,15 @@
     (asserts-panic (map-insert stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: index}) (list details)))
     (asserts-panic (map-set stackers-by-start-cycle-len reward-cycle index))))
 
-(define-private (append-details (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
+(define-private (map-set-details (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
   (let ((reward-cycle (+ (burn-height-to-reward-cycle burn-block-height) u1)))
     (let ((last-index (default-to u0 (map-get? stackers-by-start-cycle-len reward-cycle))))
       (match (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: last-index})
         stackers (match (as-max-len? (append stackers details) u30)
                 new-list (map-set stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) new-list)
                 (insert-in-new-list reward-cycle last-index details))
-        (map-insert stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) (list details))))))
+        (map-insert stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) (list details)))
+      (map-set totals-by-start-cycle reward-cycle (+ (get-total reward-cycle) (get lock-amount details))))))
 
 (define-private (pox-delegate-stack-stx (details {user: principal, amount-ustx: uint})
                   (context (tuple
@@ -84,26 +87,23 @@
         (start-burn-ht (get start-burn-ht context))
         (lock-period (get lock-period context))
         (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
-      (if (> amount-ustx u0)
-        (let ((stack-result
-          (match (contract-call? 'ST000000000000000000002AMW42H.pox delegate-stack-stx
-                      user amount-ustx
-                      pox-address start-burn-ht lock-period)
-            stacker-details (match (map-get? user-data user)
-                        user-details (begin
-                          (append-details (merge-details stacker-details user-details))
-                          (ok stacker-details))
-                        (err {kind: "user-not-found", code: err-missing-user}))
-            error (err {kind: "native-function-failed", code: (to-uint error)}))))
-          {pox-address: pox-address,
-            start-burn-ht: start-burn-ht,
-            lock-period: lock-period,
-            result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))})
+      (let ((stack-result
+        (if (> amount-ustx u0)
+          (match (map-get? user-data user)
+            user-details
+              (match (contract-call? 'ST000000000000000000002AMW42H.pox delegate-stack-stx
+                          user amount-ustx
+                          pox-address start-burn-ht lock-period)
+                stacker-details  (begin
+                              (map-set-details (merge-details stacker-details user-details))
+                              (ok stacker-details))
+                error (err {kind: "native-function-failed", code: (to-uint error)}))
+            (err {kind: "user-not-found", code: err-missing-user}))
+          (err {kind: "invalid-amount", code: err-non-positive-amount}))))
         {pox-address: pox-address,
           start-burn-ht: start-burn-ht,
           lock-period: lock-period,
-          result: (get result context)}
-      ))))
+          result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))}))))
 
 (define-public (delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint))
               (pool-pox-addr (optional (tuple (hashbytes (buff 20)) (version (buff 1)))))
@@ -130,7 +130,7 @@
 (define-read-only (get-status (user principal))
   (match (pox-get-stacker-info user)
     stacker-info  (match (map-get? user-data user)
-      user-info (ok {stacker-info: stacker-info, user-info: user-info})
+      user-info (ok {stacker-info: stacker-info, user-info: user-info, total: (get-total (get cycle user-info))})
       (err {kind: "no-user-info"}))
     (err {kind: "no-stacker-info"})))
 
@@ -139,6 +139,10 @@
 )
 
 (define-read-only (get-status-list (reward-cycle uint) (index uint))
-  (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: index})
+  {total: (get-total reward-cycle),
+  status-list: (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: index})}
 )
 
+(define-read-only (get-total (reward-cycle uint))
+  (default-to u0 (map-get? totals-by-start-cycle reward-cycle))
+)
