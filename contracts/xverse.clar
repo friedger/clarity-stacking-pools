@@ -6,32 +6,32 @@
 (define-constant err-missing-user u104)
 (define-constant err-non-positive-amount u105)
 
-
-(define-constant PREPARE_CYCLE_LENGTH u100)
-(define-constant REWARD_CYCLE_LENGTH u2100)
-
-(define-data-var first-burnchain-block-height uint u0)
-(define-data-var pox-reward-cycle-length uint REWARD_CYCLE_LENGTH)
-(define-data-var pox-prepare-cycle-length uint PREPARE_CYCLE_LENGTH)
-
 (define-map user-data principal {pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint})
 (define-map stackers-by-start-cycle {reward-cycle: uint, index: uint}
   (list 30 {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
 (define-map stackers-by-start-cycle-len uint uint)
 (define-map totals-by-start-cycle uint uint)
 
-;; What's the reward cycle number of the burnchain block height?
-;; Will runtime-abort if height is less than the first burnchain block (this is intentional)
+;; Backport of .pox's burn-height-to-reward-cycle
 (define-private (burn-height-to-reward-cycle (height uint))
-    (/ (- height (var-get first-burnchain-block-height)) (var-get pox-reward-cycle-length)))
+    (let (
+        (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox get-pox-info)))
+    )
+    (/ (- height (get first-burnchain-block-height pox-info)) (get reward-cycle-length pox-info)))
+)
 
-;; What's the block height at the start of a given reward cycle?
+;; Backport of .pox's reward-cycle-to-burn-height
 (define-private (reward-cycle-to-burn-height (cycle uint))
-    (+ (var-get first-burnchain-block-height) (* cycle (var-get pox-reward-cycle-length))))
+    (let (
+        (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox get-pox-info)))
+    )
+    (+ (get first-burnchain-block-height pox-info) (* cycle (get reward-cycle-length pox-info))))
+)
 
 ;; What's the current PoX reward cycle?
 (define-private (current-pox-reward-cycle)
     (burn-height-to-reward-cycle burn-block-height))
+
 
 (define-private (pox-get-stacker-info (user principal))
    (contract-call? 'ST000000000000000000002AMW42H.pox get-stacker-info user))
@@ -68,7 +68,7 @@
 
 (define-private (map-set-details (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 20)) (version (buff 1))), cycle: uint, locking-period: uint}))
   (let ((reward-cycle (+ (burn-height-to-reward-cycle burn-block-height) u1)))
-    (let ((last-index (default-to u0 (map-get? stackers-by-start-cycle-len reward-cycle))))
+    (let ((last-index (get-status-list-length reward-cycle)))
       (match (map-get? stackers-by-start-cycle {reward-cycle: reward-cycle, index: last-index})
         stackers (match (as-max-len? (append stackers details) u30)
                 new-list (map-set stackers-by-start-cycle (print {reward-cycle: reward-cycle, index: last-index}) new-list)
@@ -135,7 +135,7 @@
     (err {kind: "no-stacker-info"})))
 
 (define-read-only (get-status-list-length (reward-cycle uint))
-  (map-get? stackers-by-start-cycle-len reward-cycle)
+  (default-to u0 (map-get? stackers-by-start-cycle-len reward-cycle))
 )
 
 (define-read-only (get-status-list (reward-cycle uint) (index uint))

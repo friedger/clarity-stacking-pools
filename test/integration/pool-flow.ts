@@ -210,7 +210,7 @@ describe("pool flow suite", () => {
     });
     console.log(result);
     await processing(result as TxBroadcastResultOk);
-    await timeout(100000); // wait until processed otherwise the next tx overwrite this with the same nonce
+    await timeout(10000); // wait until processed otherwise the next tx overwrite this with the same nonce
   });
 
   it("delegate-stack-stx via xverse", async () => {
@@ -286,5 +286,23 @@ describe("pool flow suite", () => {
       network,
     });
     console.log(JSON.stringify(list));
+  });
+
+  it.only("verify pox-addresses", async () => {
+    const stackingClient = new StackingClient(poolAdmin.stacks, network);
+    console.log(
+      JSON.stringify(
+        stackingClient.getDelegateStackOptions({
+          contract: `${poxContractAddress}.pox`,
+          stacker: delegator.stacks,
+          amountMicroStx: new BN(1000),
+          cycles: 1,
+          burnBlockHeight: 100,
+          poxAddress: c32.c32ToB58(poolAdmin.stacks),
+        }).functionArgs
+      )
+    );
+    console.log(c32.c32ToB58(poolAdmin.stacks));
+    console.log(JSON.stringify(poxAddrCV(poolAdmin.stacks)));
   });
 });
