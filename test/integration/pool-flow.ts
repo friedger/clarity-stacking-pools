@@ -209,8 +209,7 @@ describe("pool flow suite", () => {
       privateKey: poolAdmin.private,
     });
     console.log(result);
-    await processing(result as TxBroadcastResultOk);
-    await timeout(10000); // wait until processed otherwise the next tx overwrite this with the same nonce
+    await processing(result as TxBroadcastResultOk); // wait until processed otherwise the next tx overwrite this with the same nonce
   });
 
   it("delegate-stack-stx via xverse", async () => {
@@ -249,11 +248,18 @@ describe("pool flow suite", () => {
     console.log("aggregating commits");
     const stackingClient = new StackingClient(poolAdmin.stacks, network);
     const poxInfo = await stackingClient.getPoxInfo();
-    stackingClient.stackAggregationCommit({
+    const result1 = await stackingClient.stackAggregationCommit({
       poxAddress: c32.c32ToB58(poolAdmin.stacks),
       rewardCycle: poxInfo.reward_cycle_id + 1,
       privateKey: poolAdmin.private,
     });
+    await processing(result1 as TxBroadcastResultOk);
+    const result2 = await stackingClient.stackAggregationCommit({
+      poxAddress: c32.c32ToB58(poolAdmin.stacks),
+      rewardCycle: poxInfo.reward_cycle_id + 2,
+      privateKey: poolAdmin.private,
+    });
+    await processing(result2 as TxBroadcastResultOk);
   });
 
   it("get-status", async () => {
@@ -288,7 +294,7 @@ describe("pool flow suite", () => {
     console.log(JSON.stringify(list));
   });
 
-  it.only("verify pox-addresses", async () => {
+  it("verify pox-addresses", async () => {
     const stackingClient = new StackingClient(poolAdmin.stacks, network);
     console.log(
       JSON.stringify(
