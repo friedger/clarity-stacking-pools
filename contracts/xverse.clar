@@ -130,7 +130,7 @@
 (define-read-only (get-status (user principal))
   (match (pox-get-stacker-info user)
     stacker-info  (match (map-get? user-data user)
-      user-info (ok {stacker-info: stacker-info, user-info: user-info, total: (get-total (get cycle user-info))})
+      user-info (ok {stacker-info: stacker-info, user-info: user-info, total: (get-total (get first-reward-cycle stacker-info))})
       (err {kind: "no-user-info"}))
     (err {kind: "no-stacker-info"})))
 
