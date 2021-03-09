@@ -38,8 +38,9 @@
 
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
   (if (> amount-ustx u100)
-    (let ((result-revoke (contract-call? 'ST000000000000000000002AMW42H.pox revoke-delegate-stx)))
-      (match (contract-call? 'ST000000000000000000002AMW42H.pox delegate-stx amount-ustx delegate-to until-burn-ht none)
+    (let ((result-revoke (contract-call? 'ST000000000000000000002AMW42H.pox revoke-delegate-stx))
+      (sender (print tx-sender)))
+      (match (contract-call? 'ST000000000000000000002AMW42H.pox delegate-stx amount-ustx (print delegate-to) until-burn-ht none)
         success (ok success)
         error (err {kind: "delegate-stx-failed", code: (to-uint error)})
       ))
@@ -115,8 +116,6 @@
       (err {kind: "map-fn-failed", code: err-map-set-failed}))
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
-
-
 (define-public (delegate-stack-stx (users (list 30 (tuple
                                       (user principal)
                                       (amount-ustx uint))))
@@ -126,6 +125,14 @@
     (let ((stack-result (get result (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))))
       (ok stack-result)))
 
+
+(define-public (contract-delegate-stack-stx (user principal) (amount-ustx uint) (pox-address {version: (buff 1), hashbytes: (buff 20)}) (start-burn-ht uint) (lock-period uint))
+ (unwrap-panic (element-at (get result (as-contract (pox-delegate-stack-stx {amount-ustx: amount-ustx, user: user} {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))) u0))
+)
+
+(define-public (contract-stack-aggregate-commit (pox-address {version: (buff 1), hashbytes: (buff 20)}) (reward-cycle uint))
+  (as-contract (contract-call? 'ST000000000000000000002AMW42H.pox stack-aggregation-commit pox-address reward-cycle))
+)
 
 (define-read-only (get-status (user principal))
   (match (pox-get-stacker-info user)
