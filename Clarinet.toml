@@ -1,0 +1,9 @@
+
+[project]
+name = "clarity-xverse"
+
+[contracts.xverse]
+path = "contracts/xverse.clar"
+depends_on = []
+
+[notebooks]
