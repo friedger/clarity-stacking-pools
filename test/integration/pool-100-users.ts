@@ -66,11 +66,14 @@ async function getStatus(user: string) {
   });
 }
 
-async function allowContractCaller(user: {
-  stacks: string;
-  private: string;
-  public: string;
-}) {
+async function allowContractCaller(
+  user: {
+    stacks: string;
+    private: string;
+    public: string;
+  },
+  nonce: number
+) {
   const tx = await makeContractCall({
     contractAddress: poxContractAddress,
     contractName: "pox",
@@ -81,6 +84,7 @@ async function allowContractCaller(user: {
     ],
     senderKey: user.private,
     network,
+    nonce: new BN(nonce),
   });
   return handleTransaction(tx);
 }
@@ -102,7 +106,8 @@ async function delegateStx(
     public: string;
   },
   amountUStx: number,
-  lockingPeriod: number
+  lockingPeriod: number,
+  nonce: number
 ) {
   const functionArgs = [
     uintCV(amountUStx),
@@ -119,7 +124,7 @@ async function delegateStx(
     functionArgs,
     senderKey: stacker.private,
     network,
-    postConditionMode: PostConditionMode.Allow,
+    nonce: new BN(nonce),
   });
   return await handleTransaction(tx);
 }
@@ -233,7 +238,7 @@ describe("pool flow suite", () => {
 
   it("flow with 100 users", async () => {
     console.log("allowing contract caller");
-    const result1 = await allowContractCaller(poolAdmin);
+    const result1 = await allowContractCaller(poolAdmin, 0);
     const stackingClient = new StackingClient(poolAdmin.stacks, network);
 
     expect(result1, JSON.stringify(result1)).to.be.a("string");
@@ -243,8 +248,8 @@ describe("pool flow suite", () => {
       const u = users[i];
       console.log(u.stacks);
       await faucetCall(u.stacks, amount);
-      await allowContractCaller(u);
-      await delegateStx(u, amount, 2);
+      allowContractCaller(u, 0);
+      delegateStx(u, amount, 2, 1);
     }
 
     // delegate-stack-stx
