@@ -1,9 +1,16 @@
 
 [project]
 name = "clarity-xverse"
+description = ""
+authors = []
+telemetry = true
+cache_dir = "./.cache"
 
-[contracts.xverse]
-path = "contracts/xverse.clar"
-depends_on = []
+[contracts.pox-delegation]
+path = "contracts/pox-delegation.clar"
+clarity_version = 2
+epoch = 2.1
 
-[notebooks]
+[repl.analysis]
+passes = ["check_checker"]
+check_checker = { trusted_sender = false, trusted_caller = false, callee_filter = false }
