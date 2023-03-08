@@ -1,6 +1,5 @@
 import { Tx, types, Account } from "../deps.ts";
 
-
 export function allowContractCaller(
   contractCaller: string,
   untilBurnHt: number | undefined,
@@ -26,6 +25,20 @@ export function stackAggregationCommitIndexed(
     "ST000000000000000000002AMW42H.pox-2",
     "stack-aggregation-commit-indexed",
     [types.tuple(poxAddr), types.uint(cycle)],
+    poolOperator.address
+  );
+}
+
+export function stackAggregationIncrease(
+  poxAddr: { version: string; hashbytes: string },
+  cycle: number,
+  poxAddrIndex: number,
+  poolOperator: Account
+) {
+  return Tx.contractCall(
+    "ST000000000000000000002AMW42H.pox-2",
+    "stack-aggregation-increase",
+    [types.tuple(poxAddr), types.uint(cycle), types.uint(poxAddrIndex)],
     poolOperator.address
   );
 }
