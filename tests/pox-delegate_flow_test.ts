@@ -24,7 +24,7 @@ Clarinet.test({
       delegateStx(
         1_000_000,
         deployer.address,
-        4000,
+        6300,
         undefined,
         {
           version: "0x01",
@@ -43,7 +43,7 @@ Clarinet.test({
           version: "0x01",
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
-        1,
+        2,
         wallet_2
       ),
 
@@ -62,7 +62,7 @@ Clarinet.test({
           version: "0x01",
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
-        2,
+        40,
         2,
         deployer
       ),
@@ -81,12 +81,12 @@ Clarinet.test({
     lockingInfoList[0]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(3150);
+      ["unlock-burn-height"].expectUint(6300);
 
     lockingInfoList[1]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(3150);
+      ["unlock-burn-height"].expectUint(6300);
 
     // commit for cycle 1
     block = chain.mineBlock([

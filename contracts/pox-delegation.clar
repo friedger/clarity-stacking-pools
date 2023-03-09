@@ -36,7 +36,7 @@
 ;; Backport of .pox-2's burn-height-to-reward-cycle
 (define-private (burn-height-to-reward-cycle (height uint))
     (let (
-        (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-pox-info)))
+        (pox-info (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-pox-info)))
     )
     (/ (- height (get first-burnchain-block-height pox-info)) (get reward-cycle-length pox-info)))
 )
@@ -44,7 +44,7 @@
 ;; Backport of .pox-2's reward-cycle-to-burn-height
 (define-private (reward-cycle-to-burn-height (cycle uint))
     (let (
-        (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-pox-info)))
+        (pox-info (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-pox-info)))
     )
     (+ (get first-burnchain-block-height pox-info) (* cycle (get reward-cycle-length pox-info))))
 )
@@ -56,12 +56,12 @@
 
 ;; Get stacker info
 (define-private (pox-get-stacker-info (user principal))
-   (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-stacker-info user))
+   (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
 
 ;; Revoke and delegate stx
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
-  (let ((result-revoke (contract-call? 'ST000000000000000000002AMW42H.pox-2 revoke-delegate-stx)))
-    (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
+  (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
       success (ok success)
       error (err (* u1000 (to-uint error))))))
 
@@ -122,7 +122,7 @@
         (if (> amount-ustx u0)
           (match (map-get? user-data user)
             user-details
-              (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-stx
+              (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
                           user amount-ustx
                           pox-address start-burn-ht lock-period)
                 stacker-details  (begin

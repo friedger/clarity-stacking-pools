@@ -6,7 +6,7 @@ export function allowContractCaller(
   user: Account
 ) {
   return Tx.contractCall(
-    "ST000000000000000000002AMW42H.pox-2",
+    "SP000000000000000000002Q6VF78.pox-2",
     "allow-contract-caller",
     [
       types.principal(contractCaller),
@@ -22,7 +22,7 @@ export function stackAggregationCommitIndexed(
   poolOperator: Account
 ) {
   return Tx.contractCall(
-    "ST000000000000000000002AMW42H.pox-2",
+    "SP000000000000000000002Q6VF78.pox-2",
     "stack-aggregation-commit-indexed",
     [types.tuple(poxAddr), types.uint(cycle)],
     poolOperator.address
@@ -36,7 +36,7 @@ export function stackAggregationIncrease(
   poolOperator: Account
 ) {
   return Tx.contractCall(
-    "ST000000000000000000002AMW42H.pox-2",
+    "SP000000000000000000002Q6VF78.pox-2",
     "stack-aggregation-increase",
     [types.tuple(poxAddr), types.uint(cycle), types.uint(poxAddrIndex)],
     poolOperator.address

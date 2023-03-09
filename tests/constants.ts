@@ -12,3 +12,9 @@ export const poxAddrPool1 = {
   version: "0x01",
   hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
 };
+
+
+export const poxAddrPool2 = {
+  version: "0x01",
+  hashbytes: "0x00b0b75f408a29c271d107e05d614d0ff439813d",
+};
