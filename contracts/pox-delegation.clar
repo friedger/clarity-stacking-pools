@@ -97,12 +97,12 @@
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
   (let ((reward-cycle (+ (current-pox-reward-cycle) u1))
         (lock-period (get lock-period details)))
-    (let ((last-index (get-status-list-length pool reward-cycle lock-period)))
+    (let ((last-index (get-status-lists-last-index pool reward-cycle lock-period)))
       (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
         stackers (match (as-max-len? (append stackers details) u30)
                 updated-list (map-set grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
-        (insert-in-new-list pool reward-cycle last-index details))
+        (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: last-index}) (list details)))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details))))))
 
 ;; Genesis delegate-stack-stx call.
@@ -181,12 +181,12 @@
     err-no-stacker-info))
 
 ;; Get the number of lists of stackers that have locked their stx for the given pool, cycle and lock-period.
-(define-read-only (get-status-list-length (pool principal) (reward-cycle uint) (lock-period uint))
+(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint) (lock-period uint))
   (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period}))
 )
 
 ;; Get a list of stackers that have locked their stx for the given pool, cycle and lock-period.
-;; index: must be smaller than get-status-list-length
+;; index: must be smaller than get-status-lists-last-index
 (define-read-only (get-status-list (pool principal) (reward-cycle uint)  (lock-period uint) (index uint))
   {total: (get-total pool reward-cycle lock-period),
   status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: index})}

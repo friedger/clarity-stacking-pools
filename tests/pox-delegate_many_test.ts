@@ -7,9 +7,10 @@ import {
   delegateStackStx,
   delegateStx,
   getStatusList,
-  getStatusListLength,
+  getStatusListsLastIndex,
+  getStatus,
 } from "./client/pox-delegation-client.ts";
-import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
+import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import { btcAddrWallet1, btcAddrWallet2, poxAddrPool1 } from "./constants.ts";
 
 Clarinet.test({
@@ -110,20 +111,20 @@ Clarinet.test({
 
     // verify status for users with locking period 1
     let lockingPeriod = 1;
-    let response = getStatusListLength(
+    let response = getStatusListsLastIndex(
       wallet_7.address,
       1,
       lockingPeriod,
       chain,
       wallet_7
     );
-    response.result.expectUint(1);
+    response.result.expectUint(0);
 
     response = getStatusList(
       wallet_7.address,
       1,
       lockingPeriod,
-      1,
+      0,
       chain,
       wallet_7
     );
@@ -133,25 +134,48 @@ Clarinet.test({
 
     // verify status for users with locking period 2
     lockingPeriod = 2;
-    response = getStatusListLength(
+    response = getStatusListsLastIndex(
       wallet_8.address,
       1,
       lockingPeriod,
       chain,
       deployer
     );
-    response.result.expectUint(1);
+    response.result.expectUint(0);
 
     response = getStatusList(
       wallet_8.address,
       1,
       lockingPeriod,
-      1,
+      0,
       chain,
       deployer
     );
     statusList = response.result.expectTuple();
     members = statusList["status-list"].expectSome().expectList();
+    assertEquals(members.length, 1);
     members[0].expectTuple().cycle.expectUint(0);
+
+    // verify that information are based on delegate-stx call only
+    // if locking period is more than 1 cycle there is still only one entry
+    response = getStatusList(
+      wallet_8.address,
+      2,
+      lockingPeriod,
+      0,
+      chain,
+      deployer
+    );
+    statusList = response.result.expectTuple();
+    members = statusList["status-list"].expectNone();
+
+    // verify user status
+    response = getStatus(wallet_7.address, wallet_1.address, chain, deployer);
+
+    let info = response.result.expectOk().expectTuple();
+    info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
+    info["user-info"].expectTuple().cycle.expectUint(0);
+    info["user-info"].expectTuple()["lock-period"].expectUint(1);
+    info["total"].expectUint(10_000_000_000_000);
   },
 });

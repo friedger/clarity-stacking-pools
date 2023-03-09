@@ -52,7 +52,7 @@ export function delegateStackStx(
   );
 }
 
-export function getStatusListLength(
+export function getStatusListsLastIndex(
   poolAddress: string,
   cycle: number,
   lockingPeriod: number,
@@ -61,7 +61,7 @@ export function getStatusListLength(
 ) {
   return chain.callReadOnlyFn(
     "pox-delegation",
-    "get-status-list-length",
+    "get-status-lists-last-index",
     [
       types.principal(poolAddress),
       types.uint(cycle),
