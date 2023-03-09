@@ -1,4 +1,4 @@
-import { Tx, types, Account } from "../deps.ts";
+import { Chain, Tx, types, Account } from "../deps.ts";
 
 export function delegateStx(
   amount: number,
@@ -49,5 +49,78 @@ export function delegateStackStx(
       types.uint(lockingPeriod),
     ],
     poolOperator.address
+  );
+}
+
+export function getStatusListLength(
+  poolAddress: string,
+  cycle: number,
+  lockingPeriod: number,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "pox-delegation",
+    "get-status-list-length",
+    [
+      types.principal(poolAddress),
+      types.uint(cycle),
+      types.uint(lockingPeriod),
+    ],
+    user.address
+  );
+}
+
+export function getStatusList(
+  poolAddress: string,
+  cycle: number,
+  lockingPeriod: number,
+  index: number,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "pox-delegation",
+    "get-status-list",
+    [
+      types.principal(poolAddress),
+      types.uint(cycle),
+      types.uint(lockingPeriod),
+      types.uint(index),
+    ],
+    user.address
+  );
+}
+
+export function getTotal(
+  poolAddress: string,
+  cycle: number,
+  lockingPeriod: number,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "pox-delegation",
+    "get-total",
+    [
+      types.principal(poolAddress),
+      types.uint(cycle),
+      types.uint(lockingPeriod),
+    ],
+    user.address
+  );
+}
+
+export function getStatus(
+  poolAddress: string,
+  userAddress: string,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "pox-delegation",
+    "get-status",
+    [types.principal(poolAddress), types.principal(userAddress)],
+    user.address
   );
 }

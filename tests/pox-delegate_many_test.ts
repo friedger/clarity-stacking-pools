@@ -6,11 +6,14 @@ import {
 import {
   delegateStackStx,
   delegateStx,
+  getStatusList,
+  getStatusListLength,
 } from "./client/pox-delegation-client.ts";
 import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
+import { btcAddrWallet1, btcAddrWallet2, poxAddrPool1 } from "./constants.ts";
 
 Clarinet.test({
-  name: "Ensure that users can delegate to two different pools",
+  name: "Ensure that users can delegate to two different pools using the same pox btc reward address.",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
@@ -30,10 +33,7 @@ Clarinet.test({
         wallet_7.address,
         4000,
         undefined,
-        {
-          version: "0x01",
-          hashbytes: "0x000102030405060708090a0b0c0d0e0f00010203",
-        },
+        btcAddrWallet1,
         1,
         wallet_1
       ),
@@ -43,14 +43,12 @@ Clarinet.test({
         wallet_8.address,
         undefined,
         undefined,
-        {
-          version: "0x01",
-          hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
-        },
+        btcAddrWallet2,
         2,
         wallet_2
       ),
 
+      // lock users with locking period 1
       delegateStackStx(
         [
           {
@@ -58,15 +56,13 @@ Clarinet.test({
             amountUstx: 10_000_000_000_000,
           },
         ],
-        {
-          version: "0x01",
-          hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
-        },
-        2,
+        poxAddrPool1,
+        40,
         1,
         wallet_7
       ),
 
+      // lock users with locking period 2
       delegateStackStx(
         [
           {
@@ -74,11 +70,8 @@ Clarinet.test({
             amountUstx: 10_000_000_000_000,
           },
         ],
-        {
-          version: "0x01",
-          hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
-        },
-        2,
+        poxAddrPool1,
+        40,
         2,
         wallet_8
       ),
@@ -108,26 +101,57 @@ Clarinet.test({
 
     // commit for cycle 1
     block = chain.mineBlock([
-      stackAggregationCommitIndexed(
-        {
-          version: "0x01",
-          hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
-        },
-        1,
-        wallet_7
-      ),
-      stackAggregationIncrease(
-        {
-          version: "0x01",
-          hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
-        },
-        1,
-        0,
-        wallet_8
-      ),
+      stackAggregationCommitIndexed(poxAddrPool1, 1, wallet_7),
+      stackAggregationIncrease(poxAddrPool1, 1, 0, wallet_8),
     ]);
-    // verify that pox-addr-index = 0 and 1
+    // verify that pox-addr-index = 0
     block.receipts[0].result.expectOk().expectUint(0);
     block.receipts[1].result.expectOk().expectBool(true);
+
+    // verify status for users with locking period 1
+    let lockingPeriod = 1;
+    let response = getStatusListLength(
+      wallet_7.address,
+      1,
+      lockingPeriod,
+      chain,
+      wallet_7
+    );
+    response.result.expectUint(1);
+
+    response = getStatusList(
+      wallet_7.address,
+      1,
+      lockingPeriod,
+      1,
+      chain,
+      wallet_7
+    );
+    let statusList = response.result.expectTuple();
+    let members = statusList["status-list"].expectSome().expectList();
+    members[0].expectTuple().cycle.expectUint(0);
+
+    // verify status for users with locking period 2
+    lockingPeriod = 2;
+    response = getStatusListLength(
+      wallet_8.address,
+      1,
+      lockingPeriod,
+      chain,
+      deployer
+    );
+    response.result.expectUint(1);
+
+    response = getStatusList(
+      wallet_8.address,
+      1,
+      lockingPeriod,
+      1,
+      chain,
+      deployer
+    );
+    statusList = response.result.expectTuple();
+    members = statusList["status-list"].expectSome().expectList();
+    members[0].expectTuple().cycle.expectUint(0);
   },
 });

@@ -100,9 +100,9 @@
     (let ((last-index (get-status-list-length pool reward-cycle lock-period)))
       (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
         stackers (match (as-max-len? (append stackers details) u30)
-                new-list (map-set grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) new-list)
+                updated-list (map-set grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
-        (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) (list details)))
+        (insert-in-new-list pool reward-cycle last-index details))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details))))))
 
 ;; Genesis delegate-stack-stx call.
