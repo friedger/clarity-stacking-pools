@@ -124,3 +124,12 @@ export function getStatus(
     user.address
   );
 }
+
+export function getUserData(userAddress: string, chain: Chain, user: Account) {
+  return chain.callReadOnlyFn(
+    "pox-delegation",
+    "get-user-data",
+    [types.principal(userAddress)],
+    user.address
+  );
+}

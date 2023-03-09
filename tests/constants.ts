@@ -13,8 +13,20 @@ export const poxAddrPool1 = {
   hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
 };
 
-
 export const poxAddrPool2 = {
   version: "0x01",
   hashbytes: "0x00b0b75f408a29c271d107e05d614d0ff439813d",
+};
+
+export const Errors = {
+  NotFound: 404,
+  NonPositiveAmount: 500,
+  NoStackerInfo: 501,
+  NoUserInfo: 502,
+};
+
+export const PoxErrors = {
+  StackingPermissionDenied: 9,
+  StackingThresholdNotMet: 11,
+  DelegationTooMuchLocked: 22,
 };

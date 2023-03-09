@@ -1,4 +1,4 @@
-import { Tx, types, Account } from "../deps.ts";
+import { Chain, Tx, types, Account } from "../deps.ts";
 
 export function allowContractCaller(
   contractCaller: string,
@@ -40,5 +40,20 @@ export function stackAggregationIncrease(
     "stack-aggregation-increase",
     [types.tuple(poxAddr), types.uint(cycle), types.uint(poxAddrIndex)],
     poolOperator.address
+  );
+}
+
+export function getPartialStackedByCycle(
+  poolPoxAddr: { version: string; hashbytes: string },
+  cycle: number,
+  poolAddress: string,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "SP000000000000000000002Q6VF78.pox-2",
+    "get-partial-stacked-by-cycle",
+    [types.tuple(poolPoxAddr), types.uint(cycle), types.principal(poolAddress)],
+    user.address
   );
 }
