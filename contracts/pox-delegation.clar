@@ -61,9 +61,9 @@
     amount-1
     amount-2))
 
-(define-private (asserts-panic (value bool))
-  (unwrap-panic (if value (some true) none)))
-
+;; converts response of type (response tuple int) to (response tuple uint)
+(define-read-only (as-response-with-uint (result (response {stacker: principal, total-locked: uint} int)))
+  (match result success (ok success) err (err (to-uint err))))
 ;;
 ;; Helper functions for "grouped-stackers" map
 ;;
@@ -78,19 +78,43 @@
 
 (define-private (insert-in-new-list (pool principal) (reward-cycle uint) (last-index uint) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
   (let ((index (+ last-index u1)))
-    (asserts-panic (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: index}) (list details)))
-    (asserts-panic (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details)} index))))
+    (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: index}) (list details))
+    (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details)} index)))
+
+
+;; Get the number of lists of stackers that have locked their stx for the given pool, cycle and lock-period.
+(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint) (lock-period uint))
+  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period}))
+)
 
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
   (let ((reward-cycle (+ (current-pox-reward-cycle) u1))
-        (lock-period (get lock-period details)))
-    (let ((last-index (get-status-lists-last-index pool reward-cycle lock-period)))
+        (lock-period (get lock-period details))
+        (last-index (get-status-lists-last-index pool reward-cycle lock-period)))
       (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
         stackers (match (as-max-len? (append stackers details) u30)
                 updated-list (map-set grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
         (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: last-index}) (list details)))
-      (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details))))))
+      (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details)))))
+
+;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
+;; parameter amount-ustx must be lower or equal the stx balance and the delegated amount
+(define-private (pox-delegate-stack-extend-increase (user principal)
+                    (amount-ustx uint)
+                    (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
+                    (start-burn-ht uint)
+                    (lock-period uint))
+  (let ((status (stx-account user)))
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
+                                  user pox-address lock-period)
+      success (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
+                  user pox-address (- (get locked status) amount-ustx))
+                success-increase (ok {lock-amount: (get total-locked success-increase),
+                                      stacker: user,
+                                      unlock-burn-height: (get unlock-height status)})
+                error-increase (err (* u1000000000 (to-uint error-increase))))
+      error (err (* u1000000 (to-uint error))))))
 
 ;; Genesis delegate-stack-stx call.
 ;; Stores the result in "grouped-stackers".
@@ -105,18 +129,24 @@
         (start-burn-ht (get start-burn-ht context))
         (lock-period (get lock-period context))
         (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
-      (let ((stack-result
-        (if (> amount-ustx u0)
-          (match (map-get? user-data user)
-            user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
-                            user amount-ustx
-                            pox-address start-burn-ht lock-period)
-                stacker-details  (begin
+      (let
+        ((stack-result
+          ;; call revoke and delegate-stack-stx
+          (if (> amount-ustx u0)
+            (match (map-get? user-data user)
+              user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
+                              user amount-ustx
+                              pox-address start-burn-ht lock-period)
+                      stacker-details  (begin
+                              ;; store result on success
                               (map-set-details tx-sender (merge-details stacker-details user-details))
                               (ok stacker-details))
-                error (err (* u1000 (to-uint error))))
+                      error (if (is-eq error 3) ;; check whether user is already stacked
+                              (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht lock-period)
+                              (err (* u1000 (to-uint error)))))
             err-not-found)
           err-non-positive-amount)))
+        ;; return a tuple even if delegate-stack-stx call failed
         {pox-address: pox-address,
           start-burn-ht: start-burn-ht,
           lock-period: lock-period,
@@ -146,8 +176,8 @@
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint)
                                     (lock-period uint))
-    (let ((stack-result (get result (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))))
-      (ok stack-result)))
+    (ok (get result
+      (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))))
 
 ;;
 ;; Read-only functions
@@ -163,11 +193,6 @@
            user-info: (unwrap! (map-get? user-data user) err-no-user-info),
            total: (get-total pool (get first-reward-cycle stacker-info) (get lock-period stacker-info))})))
 
-;; Get the number of lists of stackers that have locked their stx for the given pool, cycle and lock-period.
-(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint) (lock-period uint))
-  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period}))
-)
-
 ;; Get a list of stackers that have locked their stx for the given pool, cycle and lock-period.
 ;; index: must be smaller than get-status-lists-last-index
 (define-read-only (get-status-list (pool principal) (reward-cycle uint)  (lock-period uint) (index uint))
@@ -175,6 +200,8 @@
   status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: index})}
 )
 
+;; Get information about last delegation call for a given user
+;; This information can be obsolete due to a normal revoke call
 (define-read-only (get-user-data (user principal))
   (map-get? user-data user))
 

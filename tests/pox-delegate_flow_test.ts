@@ -11,6 +11,7 @@ import {
   btcAddrWallet1,
   btcAddrWallet2,
   poxAddrPool1,
+  PoxErrors,
   Errors,
 } from "./constants.ts";
 
@@ -193,5 +194,103 @@ Clarinet.test({
     lockingInfoList = block.receipts[1].result.expectOk().expectList();
     info = lockingInfoList[0].expectOk().expectTuple();
     info["lock-amount"].expectUint(500_000);
+  },
+});
+
+Clarinet.test({
+  name: "Ensure that user can delegate more while stx are locked and pool operator can increase",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    let deployer = accounts.get("deployer")!;
+    let wallet_1 = accounts.get("wallet_1")!;
+    const poxDelegationContract = deployer.address + ".pox-delegation";
+
+    let block = chain.mineBlock([
+      allowContractCaller(poxDelegationContract, undefined, deployer),
+      allowContractCaller(poxDelegationContract, undefined, wallet_1),
+
+      delegateStx(
+        1_000_000,
+        deployer.address,
+        undefined,
+        undefined,
+        btcAddrWallet1,
+        1,
+        wallet_1
+      ),
+
+      delegateStackStx(
+        [
+          {
+            user: wallet_1,
+            amountUstx: 1_000_000,
+          },
+        ],
+        poxAddrPool1,
+        40,
+        1,
+        deployer
+      ),
+    ]);
+
+    // verify results for allow contract caller
+    block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
+    // verify results for delegat-stx calls
+    block.receipts[2].result.expectOk().expectBool(true);
+    // verify delegate-stack-stx call by pool operator
+    block.receipts[3].result.expectOk().expectList();
+
+    // increase delegation
+    block = chain.mineBlock([
+      delegateStx(
+        2_000_000,
+        deployer.address,
+        undefined,
+        undefined,
+        btcAddrWallet1,
+        1,
+        wallet_1
+      ),
+    ]);
+    block.receipts[0].result.expectOk().expectBool(true);
+
+    // try to lock more in same cycle
+    block = chain.mineBlock([
+      delegateStackStx(
+        [
+          {
+            user: wallet_1,
+            amountUstx: 2_000_000,
+          },
+        ],
+        poxAddrPool1,
+        40,
+        1,
+        deployer
+      ),
+    ]);
+    let lockingInfoList = block.receipts[0].result.expectOk().expectList();
+    lockingInfoList[0]
+      .expectErr()
+      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000); // error in pox-delegate-stack-extend
+
+    // next cycle
+    chain.mineEmptyBlock(2100);
+
+    block = chain.mineBlock([
+      delegateStackStx(
+        [
+          {
+            user: wallet_1,
+            amountUstx: 2_000_000,
+          },
+        ],
+        poxAddrPool1,
+        2140,
+        1,
+        deployer
+      ),
+    ]);
+    block.receipts[0].result.expectOk().expectBool(true);
   },
 });

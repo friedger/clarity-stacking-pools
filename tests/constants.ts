@@ -26,7 +26,9 @@ export const Errors = {
 };
 
 export const PoxErrors = {
+  StackingAlreadyStacked: 3,
   StackingPermissionDenied: 9,
   StackingThresholdNotMet: 11,
   DelegationTooMuchLocked: 22,
+  StackExtendNotLocked: 26,
 };
