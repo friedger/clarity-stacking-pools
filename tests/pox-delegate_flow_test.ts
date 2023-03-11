@@ -5,8 +5,9 @@ import {
 import {
   delegateStackStx,
   delegateStx,
+  getStatus
 } from "./client/pox-delegation-client.ts";
-import { Clarinet, Tx, Chain, Account } from "./deps.ts";
+import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import {
   btcAddrWallet1,
   btcAddrWallet2,
@@ -273,6 +274,16 @@ Clarinet.test({
     lockingInfoList[0]
       .expectErr()
       .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000); // error in pox-delegate-stack-extend
+
+    console.log(
+      chain.callReadOnlyFn(
+        "pox-delegation",
+        "get-stx-account",
+        [types.principal(wallet_1.address)],
+        wallet_1.address
+      ),
+      getStatus(deployer.address, wallet_1.address, chain, wallet_1)
+    );
 
     // next cycle
     chain.mineEmptyBlock(2100);

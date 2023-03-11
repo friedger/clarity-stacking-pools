@@ -205,6 +205,9 @@
 (define-read-only (get-user-data (user principal))
   (map-get? user-data user))
 
+(define-read-only (get-stx-account (user principal))
+  (stx-account user))
+
 ;; Get total stacks locked by given pool, reward-cycle and lock-period.
 ;; The total for a given reward cycle needs to be calculated off-chain
 ;; depending on the pool's policy.
