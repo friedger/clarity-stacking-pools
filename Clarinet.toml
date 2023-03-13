@@ -1,16 +1,22 @@
-
 [project]
-name = "clarity-xverse"
-description = ""
+name = 'clarity-xverse'
+description = ''
 authors = []
 telemetry = true
-cache_dir = "./.cache"
+cache_dir = './.cache'
+
+[[project.requirements]]
+contract_id = 'SP000000000000000000002Q6VF78.pox-2'
 
 [contracts.pox-delegation]
-path = "contracts/pox-delegation.clar"
+path = 'contracts/pox-delegation.clar'
 clarity_version = 2
 epoch = 2.1
-
 [repl.analysis]
-passes = ["check_checker"]
-check_checker = { trusted_sender = false, trusted_caller = false, callee_filter = false }
+passes = ['check_checker']
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false

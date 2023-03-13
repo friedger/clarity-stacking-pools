@@ -239,7 +239,7 @@ Clarinet.test({
     // verify results for delegat-stx calls
     block.receipts[2].result.expectOk().expectBool(true);
     // verify delegate-stack-stx call by pool operator
-    block.receipts[3].result.expectOk().expectList();
+    console.log(block.receipts[3].result.expectOk().expectList()[0]);
 
     // increase delegation
     block = chain.mineBlock([
@@ -282,11 +282,22 @@ Clarinet.test({
         [types.principal(wallet_1.address)],
         wallet_1.address
       ),
-      getStatus(deployer.address, wallet_1.address, chain, wallet_1)
+      getStatus(deployer.address, wallet_1.address, chain, wallet_1).result
     );
 
     // next cycle
-    chain.mineEmptyBlock(2100);
+    chain.mineEmptyBlock(4200);
+
+
+    console.log(
+      chain.callReadOnlyFn(
+        "pox-delegation",
+        "get-stx-account",
+        [types.principal(wallet_1.address)],
+        wallet_1.address
+      ),
+      getStatus(deployer.address, wallet_1.address, chain, wallet_1).result
+    );
 
     block = chain.mineBlock([
       delegateStackStx(
@@ -297,7 +308,7 @@ Clarinet.test({
           },
         ],
         poxAddrPool1,
-        2140,
+        4240,
         1,
         deployer
       ),

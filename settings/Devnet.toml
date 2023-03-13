@@ -127,7 +127,7 @@ enable_next_features = true
 start_at_cycle = 3
 duration = 12
 wallet = "wallet_1"
-slots = 2
+slots = 20
 btc_address = "mr1iPkD9N3RJZZxXRk7xF9d36gffa6exNC"
 
 [[devnet.pox_stacking_orders]]

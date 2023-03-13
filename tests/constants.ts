@@ -1,3 +1,6 @@
+import { cvToString } from "https://esm.sh/@stacks/transactions";
+import { poxAddressToTuple } from "https://esm.sh/@stacks/stacking";
+
 export const btcAddrWallet1 = {
   version: "0x01",
   hashbytes: "0x000102030405060708090a0b0c0d0e0f00010203",
@@ -30,5 +33,10 @@ export const PoxErrors = {
   StackingPermissionDenied: 9,
   StackingThresholdNotMet: 11,
   DelegationTooMuchLocked: 22,
+  InvalidStartBurnHeight: 24,
   StackExtendNotLocked: 26,
 };
+
+console.log(
+  cvToString(poxAddressToTuple("mqVnk6NPRdhntvfm4hh9vvjiRkFDUuSYsH"))
+);
