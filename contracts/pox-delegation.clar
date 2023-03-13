@@ -7,6 +7,7 @@
 (define-constant err-non-positive-amount (err u500))
 (define-constant err-no-stacker-info (err u501))
 (define-constant err-no-user-info (err u502))
+(define-constant err-decrease-forbidden (err u503))
 
 ;; keep track of the last delegation
 ;; pox-addr: raw bytes of user's account to receive rewards, can be encoded as btc or stx address
@@ -106,10 +107,11 @@
                     (start-burn-ht uint)
                     (lock-period uint))
   (let ((status (stx-account user)))
+    (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
     (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-extend
                                   user pox-address lock-period)
       success (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-increase
-                  user pox-address (- (get locked status) amount-ustx))
+                  user pox-address (- amount-ustx (get locked status)))
                 success-increase (ok {lock-amount: (get total-locked success-increase),
                                       stacker: user,
                                       unlock-burn-height: (get unlock-height status)})
