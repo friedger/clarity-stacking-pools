@@ -60,4 +60,17 @@ plan:
             parameters:
               - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
             cost: 10000
+        - contract-call:
+            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            method: burn-height-to-reward-cycle
+            parameters:
+              - u99
+            cost: 10000
+        - contract-call:
+            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            method: burn-height-to-reward-cycle-2
+            parameters: []
+            cost: 10000
       epoch: "2.1"

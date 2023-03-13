@@ -29,7 +29,7 @@
 ;;
 
 ;; Backport of .pox-2's burn-height-to-reward-cycle
-(define-private (burn-height-to-reward-cycle (height uint))
+(define-read-only (burn-height-to-reward-cycle (height uint))
     (let (
         (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-pox-info)))
     )
