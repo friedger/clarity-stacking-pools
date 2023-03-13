@@ -15,4 +15,11 @@ plan:
             path: contracts/pox-delegation.clar
             anchor-block-only: true
             clarity-version: 2
+        - contract-publish:
+            contract-name: helper
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 2370
+            path: contracts/helper.clar
+            anchor-block-only: true
+            clarity-version: 2
       epoch: "2.1"

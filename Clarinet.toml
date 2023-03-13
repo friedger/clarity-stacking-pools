@@ -12,6 +12,12 @@ contract_id = 'SP000000000000000000002Q6VF78.pox-2'
 path = 'contracts/pox-delegation.clar'
 clarity_version = 2
 epoch = 2.1
+
+[contracts.helper]
+path = 'contracts/helper.clar'
+clarity_version = 2
+epoch = 2.1
+
 [repl.analysis]
 passes = ['check_checker']
 
