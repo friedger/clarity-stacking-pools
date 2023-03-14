@@ -25,22 +25,6 @@
 ;; Keep track of total stxs stacked grouped by pool, reward-cycle id and lock-period
 (define-map grouped-totals {pool: principal, reward-cycle: uint, lock-period: uint} uint)
 
-;;
-;; Genesis pox function calls
-;;
-
-;; Backport of .pox-2's burn-height-to-reward-cycle
-(define-read-only (burn-height-to-reward-cycle (height uint))
-    (let (
-        (pox-info (unwrap-panic (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-pox-info)))
-    )
-    (/ (- height (get first-burnchain-block-height pox-info)) (get reward-cycle-length pox-info)))
-)
-
-;; What's the current PoX reward cycle?
-(define-private (current-pox-reward-cycle)
-    (burn-height-to-reward-cycle burn-block-height))
-
 
 ;; Get stacker info
 (define-private (pox-get-stacker-info (user principal))
@@ -69,7 +53,7 @@
 ;; Helper functions for "grouped-stackers" map
 ;;
 
-(define-private (merge-details (stacker {lock-amount: uint, stacker: principal, unlock-burn-height: uint}) (user {pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
+(define-private (merge-details (stacker {lock-amount: uint, stacker: principal, unlock-burn-height: uint}) (user {pox-addr: {hashbytes: (buff 32), version: (buff 1)}, cycle: uint, lock-period: uint}))
   {lock-amount: (get lock-amount stacker),
   stacker: (get stacker stacker),
   unlock-burn-height: (get unlock-burn-height stacker),
@@ -89,7 +73,7 @@
 )
 
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
-  (let ((reward-cycle (+ (current-pox-reward-cycle) u1))
+  (let ((reward-cycle (+ (contract-call? 'ST000000000000000000002AMW42H.pox-2 current-pox-reward-cycle) u1))
         (lock-period (get lock-period details))
         (last-index (get-status-lists-last-index pool reward-cycle lock-period)))
       (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
@@ -168,7 +152,7 @@
               (lock-period uint))
   (begin
     (map-set user-data tx-sender
-                {pox-addr: user-pox-addr, cycle: (current-pox-reward-cycle), lock-period: lock-period})
+                {pox-addr: user-pox-addr, cycle: (contract-call? 'ST000000000000000000002AMW42H.pox-2 current-pox-reward-cycle), lock-period: lock-period})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
 ;; Pool admins call this function to lock stacks of their pool members in batches
