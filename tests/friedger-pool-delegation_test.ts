@@ -25,14 +25,15 @@ Clarinet.test({
     block.receipts[2].result.expectOk().expectUint(20_000_000_000_000);
     block.receipts[3].result.expectOk().expectUint(20_000_002_000_000);
 
-    console.log(block.receipts[1].events,
-      getPartialStackedByCycle(
-        { version: "0x00", hashbytes: "0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce" },
-        1,
-        `${deployer.address}.friedger-pool-delegation`,
-        chain,
-        wallet_1
-      )
-    );
+    getPartialStackedByCycle(
+      {
+        version: "0x00",
+        hashbytes: "0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce",
+      },
+      1,
+      `${deployer.address}.friedger-pool-delegation`,
+      chain,
+      wallet_1
+    ).result.expectNone();
   },
 });
