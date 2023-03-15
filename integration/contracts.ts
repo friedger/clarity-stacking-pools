@@ -1,7 +1,7 @@
 // Code generated with the stacksjs-helper-generator extension
 // Manual edits will be overwritten
 
-import { ClarityValue, BooleanCV, IntCV, UIntCV, BufferCV, OptionalCV, ResponseCV, PrincipalCV, ListCV, TupleCV, StringAsciiCV, StringUtf8CV, NoneCV } from "@stacks/transactions"
+import { ClarityValue, BooleanCV, IntCV, UIntCV, BufferCV, OptionalCV, ResponseCV, PrincipalCV, ListCV, TupleCV, StringAsciiCV, StringUtf8CV, NoneCV, StandardPrincipalCV } from "@stacks/transactions"
 
 export namespace FpDelegationContract {
     export const address = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
@@ -137,7 +137,7 @@ export namespace PoxDelegationContract {
 
             export interface DelegateStxArgs {
                 amountUstx: UIntCV,
-                delegateTo: PrincipalCV,
+                delegateTo: StandardPrincipalCV,
                 untilBurnHt: NoneCV,
                 poolPoxAddr: NoneCV,
                 userPoxAddr: TupleCV,
