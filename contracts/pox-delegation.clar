@@ -162,8 +162,11 @@
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint)
                                     (lock-period uint))
-    (ok (get result
-      (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)}))))
+    (if true
+      (ok (get result
+        (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
+      (err u1))) ;; defines uint as error type
+
 
 ;;
 ;; Read-only functions

@@ -18,6 +18,12 @@ export const poxAddrPool2 = {
   hashbytes: "0x00b0b75f408a29c271d107e05d614d0ff439813d",
 };
 
+// as defined in fp-delegation.clar
+export const poxAddrFP = {
+  version: "0x00",
+  hashbytes: "0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce",
+};
+
 export const Errors = {
   NotFound: 404,
   NonPositiveAmount: 500,

@@ -3,11 +3,14 @@
 
 (define-public (delegate-stx (amount-ustx uint))
   (let ((user-pox-addr (unwrap-panic (principal-destruct? tx-sender)))
-        (user tx-sender)
-        (start-burn-ht u100)
-        (current-cycle u0))
+        (user tx-sender))
     (try! (contract-call? .pox-delegation delegate-stx amount-ustx (as-contract tx-sender) none none {version: 0x01, hashbytes: (get hash-bytes user-pox-addr)} u1))
-    (unwrap-panic (print (as-contract (contract-call? .pox-delegation delegate-stack-stx (list {user: user, amount-ustx: amount-ustx})
+    (delegate-stack-stx amount-ustx user)))
+
+(define-public (delegate-stack-stx (amount-ustx uint) (user principal))
+  (let ((start-burn-ht (+ burn-block-height u1))
+        (current-cycle (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)))
+    (try! (get-first-result (as-contract (contract-call? .pox-delegation delegate-stack-stx (list {user: user, amount-ustx: amount-ustx})
                           (var-get pox-address)
                           start-burn-ht
                           u1))))
@@ -26,5 +29,8 @@
                       (map-set pox-addr-indices reward-cycle index)
                       (ok true))
               error (err error))))
+
+(define-read-only (get-first-result (results (response (list 30 (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} uint)) uint)))
+  (unwrap-panic (element-at (unwrap-panic results) u0)))
 
 (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 allow-contract-caller .pox-delegation none))

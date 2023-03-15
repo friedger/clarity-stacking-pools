@@ -1,11 +1,12 @@
 import {
   allowContractCaller,
   stackAggregationCommitIndexed,
+  getPoxInfo,
 } from "./client/pox-2-client.ts";
 import {
   delegateStackStx,
   delegateStx,
-  getStatus
+  getStatus,
 } from "./client/pox-delegation-client.ts";
 import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import {
@@ -239,7 +240,10 @@ Clarinet.test({
     // verify results for delegat-stx calls
     block.receipts[2].result.expectOk().expectBool(true);
     // verify delegate-stack-stx call by pool operator
-    console.log(block.receipts[3].result.expectOk().expectList()[0]);
+    block.receipts[3].result
+      .expectOk()
+      .expectList()
+      .map((r: any) => r.expectOk());
 
     // increase delegation
     block = chain.mineBlock([
@@ -276,6 +280,7 @@ Clarinet.test({
       .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000); // error in pox-delegate-stack-extend
 
     console.log(
+      "*** stx-account",
       chain.callReadOnlyFn(
         "pox-delegation",
         "get-stx-account",
@@ -293,6 +298,7 @@ Clarinet.test({
     block = chain.mineEmptyBlock(2100);
 
     console.log(
+      "*** stx-account",
       chain.callReadOnlyFn(
         "pox-delegation",
         "get-stx-account",
@@ -316,7 +322,11 @@ Clarinet.test({
         deployer
       ),
     ]);
-    let info = block.receipts[0].result.expectOk().expectList()[0].expectOk().expectTuple();
+    let info = block.receipts[0].result
+      .expectOk()
+      .expectList()[0]
+      .expectOk()
+      .expectTuple();
     info["lock-amount"].expectUint(2_000_000);
     info["unlock-burn-height"].expectUint(8400);
   },

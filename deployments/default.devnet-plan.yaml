@@ -42,10 +42,10 @@ plan:
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
-            contract-name: friedger-pool-delegation
+            contract-name: fp-delegation
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 18430
-            path: contracts/friedger-pool-delegation.clar
+            path: contracts/fp-delegation.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:

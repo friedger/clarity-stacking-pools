@@ -13,8 +13,8 @@ path = 'contracts/pox-delegation.clar'
 clarity_version = 2
 epoch = 2.1
 
-[contracts.friedger-pool-delegation]
-path = 'contracts/friedger-pool-delegation.clar'
+[contracts.fp-delegation]
+path = 'contracts/fp-delegation.clar'
 clarity_version = 2
 epoch = 2.1
 

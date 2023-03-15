@@ -57,3 +57,16 @@ export function getPartialStackedByCycle(
     user.address
   );
 }
+
+
+export function getPoxInfo(
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "SP000000000000000000002Q6VF78.pox-2",
+    "get-pox-info",
+    [],
+    user.address
+  );
+}
