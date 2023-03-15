@@ -76,6 +76,7 @@ balance = 100_000_000_000_000
 [devnet]
 disable_stacks_explorer = false
 disable_stacks_api = false
+bitcoin_controller_automining_disabled = true
 # disable_bitcoin_explorer = true
 # working_dir = "tmp/devnet"
 # stacks_node_events_observers = ["host.docker.internal:8002"]
@@ -116,7 +117,6 @@ disable_stacks_api = false
 # subnet_node_events_observers = ["host.docker.internal:8002"]
 
 # For testing in epoch 2.1 / using Clarity2
-enable_next_features = true
 # epoch_2_0 = 103
 # epoch_2_05 = 104
 # epoch_2_1 = 106
