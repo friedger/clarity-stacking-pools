@@ -286,8 +286,11 @@ Clarinet.test({
     );
 
     // next cycle
-    chain.mineEmptyBlock(4200);
+    block = chain.mineEmptyBlock(2100);
 
+    // after another cycle all stx are unlocked and can be locked again
+    // FIXME: If the line below is commented out, the test fails with error 26 (StackExtendNotLocked)
+    block = chain.mineEmptyBlock(2100);
 
     console.log(
       chain.callReadOnlyFn(
@@ -308,11 +311,13 @@ Clarinet.test({
           },
         ],
         poxAddrPool1,
-        4240,
+        block.block_height + 10,
         1,
         deployer
       ),
     ]);
-    block.receipts[0].result.expectOk().expectBool(true);
+    let info = block.receipts[0].result.expectOk().expectList()[0].expectOk().expectTuple();
+    info["lock-amount"].expectUint(2_000_000);
+    info["unlock-burn-height"].expectUint(8400);
   },
 });

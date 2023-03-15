@@ -8,12 +8,6 @@ cache_dir = './.cache'
 [[project.requirements]]
 contract_id = 'SP000000000000000000002Q6VF78.pox-2'
 
-[[project.requirements]]
-contract_id = 'SPDBEG5X8XD50SPM1JJH0E5CTXGDV5NJTKAKKR5V.sip013-semi-fungible-token-trait'
-
-[[project.requirements]]
-contract_id = 'SPDBEG5X8XD50SPM1JJH0E5CTXGDV5NJTKAKKR5V.sip013-transfer-many-trait'
-
 [contracts.pox-delegation]
 path = 'contracts/pox-delegation.clar'
 clarity_version = 2
@@ -24,10 +18,6 @@ path = 'contracts/friedger-pool-delegation.clar'
 clarity_version = 2
 epoch = 2.1
 
-[contracts.friedger-pool-sft]
-path = 'contracts/friedger-pool-sft.clar'
-clarity_version = 2
-epoch = 2.1
 
 [contracts.helper]
 path = 'contracts/helper.clar'
