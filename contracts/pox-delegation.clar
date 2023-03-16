@@ -94,12 +94,16 @@
     (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
     (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-extend
                                   user pox-address lock-period)
-      success (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-increase
-                  user pox-address (- amount-ustx (get locked status)))
-                success-increase (ok {lock-amount: (get total-locked success-increase),
-                                      stacker: user,
-                                      unlock-burn-height: (get unlock-height status)})
-                error-increase (err (* u1000000000 (to-uint error-increase))))
+      success (if (> amount-ustx (get locked status))
+                (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-increase
+                              user pox-address (- amount-ustx (get locked status)))
+                    success-increase (ok {lock-amount: (get total-locked success-increase),
+                                          stacker: user,
+                                          unlock-burn-height: (get unlock-burn-height success)})
+                    error-increase (err (* u1000000000 (to-uint error-increase))))
+              (ok {lock-amount: (get locked status),
+                   stacker: user,
+                   unlock-burn-height: (get unlock-burn-height success)}))
       error (err (* u1000000 (to-uint error))))))
 
 ;; Genesis delegate-stack-stx call.
