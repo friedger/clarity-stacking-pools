@@ -17,7 +17,10 @@ import {
 } from "./helpers";
 import { Accounts } from "./constants";
 import { StacksTestnet } from "@stacks/network";
-import { DevnetNetworkOrchestrator } from "@hirosystems/stacks-devnet-js";
+import {
+  DevnetNetworkOrchestrator,
+  StacksBlockMetadata,
+} from "@hirosystems/stacks-devnet-js";
 import { decodeBtcAddress } from "@stacks/stacking";
 import { toBytes } from "@stacks/common";
 
@@ -37,6 +40,8 @@ import {
   uintCV,
 } from "@stacks/transactions";
 import { broadcastAllowContractCallerContracCall } from "./allowContractCaller";
+import { afterAll, beforeAll, describe, it } from "vitest";
+import { broadcastDelegateStackStx, broadcastDelegateStx } from "./helper-fp";
 
 describe("testing stacking under epoch 2.1", () => {
   let orchestrator: DevnetNetworkOrchestrator;
@@ -51,151 +56,82 @@ describe("testing stacking under epoch 2.1", () => {
     orchestrator.terminate();
   });
 
-  it("test whole flow with initiate, increase stacking and extend stacking", async () => {
+  it("test delegation with fp for three cycles", async () => {
     const network = new StacksTestnet({ url: orchestrator.getStacksNodeUrl() });
+
+    let chainUpdate = await waitForRewardCycleId(network, orchestrator, 2);
+    console.log(chainUpdate.new_blocks[0].block.metadata);
+
     let poxInfo = await getPoxInfo(network);
-    const fee = 1000;
-    await orchestrator.waitForStacksBlockAnchoredOnBitcoinBlockOfHeight(
-      timeline.pox_2_activation + 1,
-      5,
-      true
-    );
-    poxInfo = await getPoxInfo(network);
     console.log("PoxInfo, Pre conventional stacking:", poxInfo);
 
-    // Let's look at a conventional stack-stx op
-    let response = await broadcastStackSTX(
-      2,
-      network,
-      50_000_000_000_000,
-      Accounts.WALLET_3,
-      poxInfo.current_burnchain_block_height,
-      12,
-      fee,
-      0
-    );
-    expect(response.error).toBeUndefined();
-    await orchestrator.waitForNextStacksBlock();
-
-    poxInfo = await getPoxInfo(network);
-    console.log("PoxInfo, Post conventional stacking:", poxInfo);
-
-    await orchestrator.waitForNextStacksBlock();
-
-    // @ts-ignore
-
-    let txOptions = {
-      contractAddress: HelperContract.address,
-      contractName: HelperContract.name,
-      functionName: HelperContract.Functions.GetStxAccount.name,
-      functionArgs: [
-        principalCV(Accounts.WALLET_3.stxAddress),
-      ] as ClarityValue[],
-      fee,
-      nonce: 1,
-      network,
-      anchorMode: AnchorMode.OnChainOnly,
-      postConditionMode: PostConditionMode.Allow,
-      senderKey: Accounts.WALLET_3.secretKey,
-    };
-    // @ts-ignore
-    let tx = await makeContractCall(txOptions);
-    // Broadcast transaction to our Devnet stacks node
-    let result = await broadcastTransaction(tx, network);
-
-    // allow-contract-caller
-
-    result = await broadcastAllowContractCallerContracCall({
-      senderKey: Accounts.DEPLOYER.secretKey,
-      network,
-      nonce: 3,
-    });
-    result = await broadcastAllowContractCallerContracCall({
-      senderKey: Accounts.WALLET_2.secretKey,
+    await broadcastAllowContractCallerContracCall({
       network,
       nonce: 0,
+      senderKey: Accounts.WALLET_4.secretKey,
     });
 
-    //
-    // delegate stx
-    //
-
-    const { version, data } = decodeBtcAddress(Accounts.WALLET_2.btcAddress);
-    // @ts-ignore
-    const userAddress = {
-      version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))),
-      hashbytes: bufferCV(data),
-    };
-
-    txOptions = {
-      contractAddress: PoxDelegationContract.address,
-      contractName: PoxDelegationContract.name,
-      functionName: PoxDelegationContract.Functions.DelegateStx.name,
-      functionArgs: PoxDelegationContract.Functions.DelegateStx.args({
-        amountUstx: uintCV(20_000_000_000),
-        delegateTo: standardPrincipalCV(Accounts.DEPLOYER.stxAddress),
-        lockPeriod: uintCV(1),
-        poolPoxAddr: noneCV(),
-        untilBurnHt: noneCV(),
-        userPoxAddr: tupleCV(userAddress),
-      }),
-      fee,
+    await broadcastDelegateStx({
+      amountUstx: 10_000_000_000,
+      user: Accounts.WALLET_4,
       nonce: 1,
       network,
-      anchorMode: AnchorMode.OnChainOnly,
-      postConditionMode: PostConditionMode.Allow,
-      senderKey: Accounts.WALLET_2.secretKey,
-    };
-    // @ts-ignore
-    tx = await makeContractCall(txOptions);
-    // Broadcast transaction to our Devnet stacks node
-    result = await broadcastTransaction(tx, network);
+    });
 
-    let block = await orchestrator.waitForNextStacksBlock();
-
-    console.log(JSON.stringify(block));
-
-    //
-    // delegate-stack-stx
-    //
-
-    const { version: version2, data: data2 } = decodeBtcAddress(
-      Accounts.DEPLOYER.btcAddress
+    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    console.log(
+      "** " +
+        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
+          .bitcoin_anchor_block_identifier.index
     );
-    // @ts-ignore
-    const poxAddrPool = {
-      version: bufferCV(toBytes(new Uint8Array([version2.valueOf()]))),
-      hashbytes: bufferCV(data2),
-    };
+    console.log(JSON.stringify(chainUpdate));
 
-    let txOptions2 = {
-      contractAddress: PoxDelegationContract.address,
-      contractName: PoxDelegationContract.name,
-      functionName: PoxDelegationContract.Functions.DelegateStackStx.name,
-      functionArgs: PoxDelegationContract.Functions.DelegateStackStx.args({
-        poxAddress: tupleCV(poxAddrPool),
-        startBurnHt: uintCV(10),
-        users: listCV([
-          tupleCV({
-            user: principalCV(Accounts.WALLET_2.stxAddress),
-            "amount-ustx": uintCV(20_000_000_000),
-          }),
-        ]),
-        lockPeriod: uintCV(1),
-      }),
-      fee,
-      nonce: 4,
+    await waitForRewardCycleId(network, orchestrator, 3);
+    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    console.log(
+      "** " +
+        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
+          .bitcoin_anchor_block_identifier.index
+    );
+    console.log(JSON.stringify(chainUpdate));
+
+    await broadcastDelegateStx({
+      amountUstx: 11_000_000_000,
+      user: Accounts.WALLET_4,
+      nonce: 2,
       network,
-      anchorMode: AnchorMode.OnChainOnly,
-      postConditionMode: PostConditionMode.Allow,
-      senderKey: Accounts.DEPLOYER.secretKey,
-    };
-    // @ts-ignore
-    tx = await makeContractCall(txOptions2);
-    // Broadcast transaction to our Devnet stacks node
-    result = await broadcastTransaction(tx, network);
+    });
+    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    console.log(
+      "** " +
+        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
+          .bitcoin_anchor_block_identifier.index
+    );
+    console.log(JSON.stringify(chainUpdate));
 
-    block = await orchestrator.waitForNextStacksBlock();
-    console.log(JSON.stringify(block));
+    await waitForRewardCycleId(network, orchestrator, 4);
+
+    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    console.log(
+      "** " +
+        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
+          .bitcoin_anchor_block_identifier.index
+    );
+    console.log(JSON.stringify(chainUpdate));
+
+    await broadcastDelegateStackStx({
+      amountUstx: 11_000_000_000,
+      stacker: Accounts.WALLET_4,
+      user: Accounts.DEPLOYER,
+      nonce: 3,
+      network,
+    });
+    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    console.log(
+      "** " +
+        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
+          .bitcoin_anchor_block_identifier.index
+    );
+    console.log(JSON.stringify(chainUpdate));
   });
 });

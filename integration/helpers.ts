@@ -28,6 +28,7 @@ import { Constants } from "./constants";
 
 import { decodeBtcAddress } from "@stacks/stacking";
 import { toBytes } from "@stacks/common";
+import { expect } from "vitest";
 const fetch = require("node-fetch");
 
 interface Account {
@@ -232,6 +233,24 @@ export const expectAccountToBe = async (
   expect(wallet.locked).toBe(BigInt(locked));
 };
 
+export async function handleContractCall({
+  txOptions,
+  network
+}: {
+  txOptions: any;
+  network: StacksNetwork;
+}) {
+  // @ts-ignore
+  const tx = await makeContractCall(txOptions);
+  // Broadcast transaction to our Devnet stacks node
+  const response = await broadcastTransaction(tx, network);
+  expect(
+    response.error,
+    "tx failed\n" + response.reason + " " + JSON.stringify(response.reason_data)
+  ).toBeUndefined();
+  return response;
+}
+
 export const broadcastStackSTX = async (
   poxVersion: number,
   network: StacksNetwork,
@@ -266,8 +285,8 @@ export const broadcastStackSTX = async (
   // @ts-ignore
   const tx = await makeContractCall(txOptions);
   // Broadcast transaction to our Devnet stacks node
-  const result = await broadcastTransaction(tx, network);
-  return result;
+  const response = await broadcastTransaction(tx, network);
+  return response;
 };
 
 export const createVault = async(
@@ -283,7 +302,7 @@ export const createVault = async(
     contractName: 'arkadiko-freddie-v1-1',
     functionName: "collateralize-and-mint",
     functionArgs: [
-      uintCV(collateralAmount * 1000000), 
+      uintCV(collateralAmount * 1000000),
       uintCV(usda * 1000000),
       tupleCV({
         'stack-pox': trueCV(),

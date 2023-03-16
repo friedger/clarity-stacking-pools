@@ -42,4 +42,11 @@ export namespace Accounts {
     secretKey:
       "d655b2523bcd65e34889725c73064feb17ceb796831c0e111ba1a552b0f31b3901",
   };
+
+  export const WALLET_4 = {
+    secretKey:
+      "f9d7206a47f14d2870c163ebab4bf3e70d18f5d14ce1031f3902fbbc894fe4c701",
+    stxAddress: "ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND",
+    btcAddress: "mg1C76bNTutiCDV3t9nWhZs3Dc8LzUufj8",
+  };
 }
