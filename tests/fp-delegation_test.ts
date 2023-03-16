@@ -8,7 +8,7 @@ import {
 } from "./client/fp-delegation-client.ts";
 import { Clarinet, Chain, Account } from "./deps.ts";
 import { expectPartialStackedByCycle } from "./utils.ts";
-import { poxAddrFP } from "./constants.ts";
+import { PoxErrors, poxAddrFP } from "./constants.ts";
 
 Clarinet.test({
   name: "Ensure that users can delegate",
@@ -35,7 +35,7 @@ Clarinet.test({
 });
 
 Clarinet.test({
-  name: "Ensure that user can increase amount for next cycle",
+  name: "See that in simnet user can't increase amount for next cycle",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
@@ -57,16 +57,19 @@ Clarinet.test({
     chain.mineEmptyBlock(2100);
 
     // increase delegation to 3 stx for cycle 2
-    block = chain.mineBlock([
-      delegateStx(3_000_000, wallet_1),
-    ]);
+    block = chain.mineBlock([delegateStx(3_000_000, wallet_1)]);
 
-    block.receipts[0].result.expectOk().expectUint(3_000_000);
+    // support for simnet is limited, in particular stx-account returns other values
+    // therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // block.receipts[0].result.expectOk().expectUint(3_000_000);
+    block.receipts[0].result
+      .expectErr()
+      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
   },
 });
 
 Clarinet.test({
-  name: "Ensure that user can extend for next cycle for any user",
+  name: "See that in simnet user can extend for next cycle for any user",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
@@ -87,7 +90,16 @@ Clarinet.test({
     chain.mineEmptyBlock(2100);
     // extend to cycle 2
     block = chain.mineBlock([delegateStackStx(2_000_000, wallet_1, wallet_2)]);
-    block.receipts[0].result.expectOk().expectUint(2_000_000);
-    expectPartialStackedByCycle(poxAddrFP, 2, 2_000_000, chain, deployer);
+
+    // support for simnet is limited, in particular stx-account returns other values
+    // .. therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // block.receipts[0].result.expectOk().expectUint(2_000_000);
+    block.receipts[0].result
+      .expectErr()
+      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+
+    // .. therefore, partial stacked amount for cycle 2 is none.
+    // expectPartialStackedByCycle(poxAddrFP, 2, 2_000_000, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
   },
 });

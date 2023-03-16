@@ -28,12 +28,12 @@
 
 ;; Get stacker info
 (define-private (pox-get-stacker-info (user principal))
-   (contract-call? 'ST000000000000000000002AMW42H.pox-2 get-stacker-info user))
+   (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
 
 ;; Revoke and delegate stx
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
-  (let ((result-revoke (contract-call? 'ST000000000000000000002AMW42H.pox-2 revoke-delegate-stx)))
-    (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
+  (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
       success (ok success)
       error (err (* u1000 (to-uint error))))))
 
@@ -73,7 +73,7 @@
 )
 
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
-  (let ((reward-cycle (+ (contract-call? 'ST000000000000000000002AMW42H.pox-2 current-pox-reward-cycle) u1))
+  (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
         (lock-period (get lock-period details))
         (last-index (get-status-lists-last-index pool reward-cycle lock-period)))
       (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
@@ -92,10 +92,10 @@
                     (lock-period uint))
   (let ((status (stx-account user)))
     (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
-    (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-extend
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
                                   user pox-address lock-period)
       success (if (> amount-ustx (get locked status))
-                (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-increase
+                (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
                               user pox-address (- amount-ustx (get locked status)))
                     success-increase (ok {lock-amount: (get total-locked success-increase),
                                           stacker: user,
@@ -124,7 +124,7 @@
           ;; call revoke and delegate-stack-stx
           (if (> amount-ustx u0)
             (match (map-get? user-data user)
-              user-details (match (contract-call? 'ST000000000000000000002AMW42H.pox-2 delegate-stack-stx
+              user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
                               user amount-ustx
                               pox-address start-burn-ht lock-period)
                       stacker-details  (begin
@@ -156,7 +156,7 @@
               (lock-period uint))
   (begin
     (map-set user-data tx-sender
-                {pox-addr: user-pox-addr, cycle: (contract-call? 'ST000000000000000000002AMW42H.pox-2 current-pox-reward-cycle), lock-period: lock-period})
+                {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle), lock-period: lock-period})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
 ;; Pool admins call this function to lock stacks of their pool members in batches
