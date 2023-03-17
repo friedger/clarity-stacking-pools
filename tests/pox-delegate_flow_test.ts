@@ -200,7 +200,7 @@ Clarinet.test({
 });
 
 Clarinet.test({
-  name: "Ensure that user can delegate more while stx are locked and pool operator can increase",
+  name: "See that in simnet user can delegate more while stx are locked and pool operator can increase after unlocking",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
@@ -294,19 +294,16 @@ Clarinet.test({
     block = chain.mineEmptyBlock(2100);
 
     // after another cycle all stx are unlocked and can be locked again
-    // FIXME: If the line below is commented out, the test fails with error 26 (StackExtendNotLocked)
     block = chain.mineEmptyBlock(2100);
 
-    console.log(
-      "*** stx-account",
-      chain.callReadOnlyFn(
-        "pox-delegation",
-        "get-stx-account",
-        [types.principal(wallet_1.address)],
-        wallet_1.address
-      ),
-      getStatus(deployer.address, wallet_1.address, chain, wallet_1).result
+    // user does not stack anymore
+    const response = getStatus(
+      deployer.address,
+      wallet_1.address,
+      chain,
+      wallet_1
     );
+    response.result.expectErr().expectUint(Errors.NoStackerInfo);
 
     block = chain.mineBlock([
       delegateStackStx(

@@ -29,6 +29,7 @@ export const Errors = {
   NonPositiveAmount: 500,
   NoStackerInfo: 501,
   NoUserInfo: 502,
+  StackingPermissionDenied: 609,
 };
 
 export const PoxErrors = {
@@ -38,4 +39,9 @@ export const PoxErrors = {
   DelegationTooMuchLocked: 22,
   InvalidStartBurnHeight: 24,
   StackExtendNotLocked: 26,
+};
+
+export const FpErrors = {
+  TooEarly: 500,
+  StackingPermissionDenied: 709,
 };

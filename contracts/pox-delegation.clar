@@ -8,6 +8,7 @@
 (define-constant err-no-stacker-info (err u501))
 (define-constant err-no-user-info (err u502))
 (define-constant err-decrease-forbidden (err u503))
+(define-constant err-stacking-permission-denied (err u609))
 
 ;; keep track of the last delegation
 ;; pox-addr: raw bytes of user's account to receive rewards, can be encoded as btc or stx address
@@ -25,6 +26,10 @@
 ;; Keep track of total stxs stacked grouped by pool, reward-cycle id and lock-period
 (define-map grouped-totals {pool: principal, reward-cycle: uint, lock-period: uint} uint)
 
+;; allowed contract-callers
+(define-map allowance-contract-callers
+    { sender: principal, contract-caller: principal }
+    { until-burn-ht: (optional uint) })
 
 ;; Get stacker info
 (define-private (pox-get-stacker-info (user principal))
@@ -155,6 +160,9 @@
               (user-pox-addr (tuple (hashbytes (buff 32)) (version (buff 1))))
               (lock-period uint))
   (begin
+    ;; must be called directly by the tx-sender or by an allowed contract-caller
+      (asserts! (check-caller-allowed)
+                err-stacking-permission-denied)
     (map-set user-data tx-sender
                 {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle), lock-period: lock-period})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
@@ -171,6 +179,48 @@
         (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
       (err u1))) ;; defines uint as error type
 
+;;
+;; Functions about alloance of delegation/stacking contract calls
+;;
+
+;; Give a contract-caller authorization to call stacking methods
+;;  normally, stacking methods may only be invoked by _direct_ transactions
+;;   (i.e., the tx-sender issues a direct contract-call to the stacking methods)
+;;  by issuing an allowance, the tx-sender may call through the allowed contract
+(define-public (allow-contract-caller (caller principal) (until-burn-ht (optional uint)))
+  (begin
+    (asserts! (is-eq tx-sender contract-caller) err-stacking-permission-denied)
+    (ok (map-set allowance-contract-callers
+               { sender: tx-sender, contract-caller: caller }
+               { until-burn-ht: until-burn-ht }))))
+
+;; Revoke contract-caller authorization to call stacking methods
+(define-public (disallow-contract-caller (caller principal))
+  (begin
+    (asserts! (is-eq tx-sender contract-caller) err-stacking-permission-denied)
+    (ok (map-delete allowance-contract-callers { sender: tx-sender, contract-caller: caller }))))
+
+(define-read-only (check-caller-allowed)
+    (or (is-eq tx-sender contract-caller)
+        (let ((caller-allowed
+                 ;; if not in the caller map, return false
+                 (unwrap! (map-get? allowance-contract-callers
+                                    { sender: tx-sender, contract-caller: contract-caller })
+                          false))
+               (expires-at
+                 ;; if until-burn-ht not set, then return true (because no expiry)
+                 (unwrap! (get until-burn-ht caller-allowed) true)))
+          ;; is the caller allowance still valid
+          (< burn-block-height expires-at))))
+
+
+;; Get the burn height at which a particular contract is allowed to stack for a particular principal.
+;; Returns (some (some X)) if X is the burn height at which the allowance terminates
+;; Returns (some none) if the caller is allowed indefinitely
+;; Returns none if there is no allowance record
+(define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
+    (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
+)
 
 ;;
 ;; Read-only functions

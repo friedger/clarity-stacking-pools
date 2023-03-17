@@ -1,5 +1,22 @@
 import { Chain, Tx, types, Account } from "../deps.ts";
 
+
+export function poxDelegationAllowContractCaller(
+  contractCaller: string,
+  untilBurnHt: number | undefined,
+  user: Account
+) {
+  return Tx.contractCall(
+    "pox-delegation",
+    "allow-contract-caller",
+    [
+      types.principal(contractCaller),
+      untilBurnHt ? types.some(types.uint(untilBurnHt)) : types.none(),
+    ],
+    user.address
+  );
+}
+
 export function delegateStx(
   amount: number,
   poolAddress: string,
