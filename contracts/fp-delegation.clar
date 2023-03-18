@@ -1,5 +1,7 @@
 ;; FAST Pool - Self-service non-custodial stacking pool
 ;; The pool locks for 1 cycle, amount can be increased at each cycle.
+;; Users trust the reward admin that they will receive their share of rewards.
+;; Reward admin can be a contract as well.
 ;;
 ;; User calls delegate-stx once.
 ;; For next cycles, users can call delegate-stx
@@ -16,8 +18,9 @@
 
 (define-constant err-unauthorized (err u401))
 (define-constant err-too-early (err u500))
-;; Error code 9 is used by pox-2 contract, 609 is used by pox-delegation contract.
-(define-constant err-stacking-permission-denied (err u709))
+(define-constant err-decrease-forbidden (err u503))
+;; Error code 9 is used by pox-2 contract
+(define-constant err-stacking-permission-denied (err u609))
 
 ;; allowed contract-callers
 (define-map allowance-contract-callers
@@ -35,16 +38,53 @@
         (user tx-sender)
         (current-cycle (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)))
     (asserts! (check-caller-allowed) err-stacking-permission-denied)
-    (try! (contract-call? .pox-delegation delegate-stx amount-ustx (as-contract tx-sender) none none {version: 0x01, hashbytes: (get hash-bytes user-pox-addr)} u1))
+    (try! (as-bool-response-with-uint (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx (as-contract tx-sender) none none)))
     (delegate-stack-stx-inner amount-ustx user current-cycle)))
 
 (define-private (delegate-stack-stx-inner (amount-ustx uint) (user principal) (current-cycle uint))
-  (let ((start-burn-ht (+ burn-block-height u1)))
-    (try! (get-first-result (as-contract (contract-call? .pox-delegation delegate-stack-stx (list {user: user, amount-ustx: amount-ustx})
-                          (var-get fp-pox-address)
+  (let ((start-burn-ht (+ burn-block-height u1))
+        (pox-addr (var-get fp-pox-address)))
+    (try! (as-tuple-response-with-uint (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
+                          user amount-ustx
+                          pox-addr
                           start-burn-ht
                           u1))))
+    (try! (as-contract (pox-delegate-stack-stx user amount-ustx pox-addr start-burn-ht u1)))
     (maybe-stack-aggregation-commit current-cycle)))
+
+
+(define-private (pox-delegate-stack-stx (user principal) (amount-ustx uint) (pox-address {hashbytes: (buff 32), version: (buff 1)}) (start-burn-ht uint) (lock-period uint))
+  (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
+                              user amount-ustx
+                              pox-address start-burn-ht lock-period)
+                      stacker-details  (ok stacker-details)
+                      error (if (is-eq error 3) ;; check whether user is already stacked
+                              (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht lock-period)
+                              (err (* u1000 (to-uint error)))))
+)
+
+;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
+;; parameter amount-ustx must be lower or equal the stx balance and the delegated amount
+(define-private (pox-delegate-stack-extend-increase (user principal)
+                    (amount-ustx uint)
+                    (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
+                    (start-burn-ht uint)
+                    (lock-period uint))
+  (let ((status (stx-account user)))
+    (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
+                                  user pox-address lock-period)
+      success (if (> amount-ustx (get locked status))
+                (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
+                              user pox-address (- amount-ustx (get locked status)))
+                    success-increase (ok {lock-amount: (get total-locked success-increase),
+                                          stacker: user,
+                                          unlock-burn-height: (get unlock-burn-height success)})
+                    error-increase (err (* u1000000000 (to-uint error-increase))))
+              (ok {lock-amount: (get locked status),
+                   stacker: user,
+                   unlock-burn-height: (get unlock-burn-height success)}))
+      error (err (* u1000000 (to-uint error))))))
 
 ;; Stacks the delegated amount for the given user for the next cycle.
 ;; This function can be called by automation, friends or family for user that have delegated once.
@@ -117,6 +157,14 @@
 (define-read-only (get-first-result (results (response (list 30 (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} uint)) uint)))
   (unwrap-panic (element-at (unwrap-panic results) u0)))
 
+;; converts response of type (response tuple int) to (response tuple uint)
+(define-read-only (as-tuple-response-with-uint (result (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} int)))
+  (match result success (ok success) err (err (to-uint err))))
+
+;; converts response of type (response bool int) to (response bool uint)
+(define-read-only (as-bool-response-with-uint (result (response bool int)))
+  (match result success (ok success) err (err (to-uint err))))
+
 ;;
 ;; Functions about alloance of delegation/stacking contract calls
 ;;
@@ -159,10 +207,3 @@
 (define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
     (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
 )
-
-;;
-;; Init
-;;
-
-;; Allow .pox-delegation as stacking management contract
-(as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 allow-contract-caller .pox-delegation none))
