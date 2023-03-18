@@ -126,7 +126,7 @@
         (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
       (let
         ((stack-result
-          ;; call revoke and delegate-stack-stx
+          ;; call delegate-stack-stx
           (if (> amount-ustx u0)
             (match (map-get? user-data user)
               user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
