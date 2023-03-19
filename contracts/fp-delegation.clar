@@ -121,9 +121,9 @@
         (pox-address (var-get fp-pox-address))
         ;; delegate the minimum of the delegated amount and stx balance (including locked stx)
         (buffer-amount (var-get stx-buffer))
-        (allowed-amount (min (get-delegated-amount user) (stx-get-balance user)))
-        (save-amount (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount))
-        (amount-ustx (max save-amount (get locked (stx-account user)))))
+        (user-account (stx-account user))
+        (allowed-amount (min (get-delegated-amount user) (+ (get locked user-account) (get unlocked user-account))))
+        (amount-ustx (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount)))
     (asserts! (var-get active) err-pox-address-deactivated)
     (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
                                 user amount-ustx
