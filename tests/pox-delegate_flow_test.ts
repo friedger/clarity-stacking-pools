@@ -211,7 +211,6 @@ Clarinet.test({
         4200,
         undefined,
         btcAddrWallet1,
-        1,
         wallet_1
       ),
 
@@ -221,7 +220,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet2,
-        2,
         wallet_2
       ),
     ]);
@@ -253,7 +251,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);
