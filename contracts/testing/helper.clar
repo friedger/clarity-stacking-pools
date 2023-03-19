@@ -1,3 +1,7 @@
+;; Helper contract mainly to wrap read-only function in public functions
+;; that can be used with "clarinet integrate".
+;; Currently, it is not possible to use read-only functions in deployment plans.
+
 (define-public (get-user-data (user principal))
   (ok (print (contract-call? .pox-delegation get-user-data user))))
 
