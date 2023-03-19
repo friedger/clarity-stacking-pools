@@ -195,7 +195,7 @@
         (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
       (err u1))) ;; defines uint as error type
 
-;; Pool admins call this function to lock stacks of their pool members in batches
+;; Pool admins call this function to lock stacks of their pool members in batches for a lock period of 1 cycle
 (define-public (delegate-stack-stx-simple (users (list 30 principal))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint))
