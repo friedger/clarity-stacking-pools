@@ -17,6 +17,7 @@ import {
   poxAddrPool1,
   poxAddrPool2,
 } from "./constants.ts";
+import { hexToBytes } from "https://esm.sh/@stacks/common";
 
 function delegateAndDelegateStx(
   chain: Chain,
@@ -42,7 +43,6 @@ function delegateAndDelegateStx(
       4300,
       undefined,
       btcAddrWallet1,
-      1,
       wallet_1
     ),
 
@@ -52,7 +52,6 @@ function delegateAndDelegateStx(
       undefined,
       undefined,
       btcAddrWallet2,
-      2,
       wallet_2
     ),
 
@@ -66,7 +65,6 @@ function delegateAndDelegateStx(
       ],
       poxAddrPool1,
       40,
-      1,
       pool_1
     ),
 
@@ -80,7 +78,6 @@ function delegateAndDelegateStx(
       ],
       samePoxAddr ? poxAddrPool1 : poxAddrPool2,
       40,
-      2,
       pool_2
     ),
   ]);
@@ -105,7 +102,7 @@ function delegateAndDelegateStx(
   lockingInfoList[0]
     .expectOk()
     .expectTuple()
-    ["unlock-burn-height"].expectUint(6300);
+    ["unlock-burn-height"].expectUint(4200);
 }
 
 Clarinet.test({
@@ -129,62 +126,17 @@ Clarinet.test({
     block.receipts[1].result.expectOk().expectBool(true);
 
     // verify status for users with locking period 1
-    let lockingPeriod = 1;
-    let response = getStatusListsLastIndex(
-      pool_1.address,
-      1,
-      lockingPeriod,
-      chain,
-      pool_1
-    );
+    let response = getStatusListsLastIndex(pool_1.address, 1, chain, pool_1);
     response.result.expectUint(0);
 
-    response = getStatusList(
-      pool_1.address,
-      1,
-      lockingPeriod,
-      0,
-      chain,
-      pool_1
-    );
+    response = getStatusList(pool_1.address, 1, 0, chain, pool_1);
     let statusList = response.result.expectTuple();
     let members = statusList["status-list"].expectSome().expectList();
     members[0].expectTuple().cycle.expectUint(0);
 
-    // verify status for users with locking period 2
-    lockingPeriod = 2;
-    response = getStatusListsLastIndex(
-      pool_2.address,
-      1,
-      lockingPeriod,
-      chain,
-      deployer
-    );
-    response.result.expectUint(0);
-
-    response = getStatusList(
-      pool_2.address,
-      1,
-      lockingPeriod,
-      0,
-      chain,
-      deployer
-    );
-    statusList = response.result.expectTuple();
-    members = statusList["status-list"].expectSome().expectList();
-    assertEquals(members.length, 1);
-    members[0].expectTuple().cycle.expectUint(0);
-
     // verify that information are based on delegate-stx call only
     // if locking period is more than 1 cycle there is still only one entry
-    response = getStatusList(
-      pool_2.address,
-      2,
-      lockingPeriod,
-      0,
-      chain,
-      deployer
-    );
+    response = getStatusList(pool_2.address, 2, 0, chain, deployer);
     statusList = response.result.expectTuple();
     members = statusList["status-list"].expectNone();
 
@@ -194,7 +146,13 @@ Clarinet.test({
     let info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
     info["user-info"].expectTuple().cycle.expectUint(0);
-    info["user-info"].expectTuple()["lock-period"].expectUint(1);
+    info["user-info"]
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
+
     info["total"].expectUint(10_000_000_000_000);
 
     response = getStatus(pool_2.address, wallet_2.address, chain, deployer);
@@ -202,7 +160,13 @@ Clarinet.test({
     info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
     info["user-info"].expectTuple().cycle.expectUint(0);
-    info["user-info"].expectTuple()["lock-period"].expectUint(2);
+    info["user-info"]
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("00102030405060708090a0b0c0d0e0f000102030")
+      );
+
     info["total"].expectUint(10_000_000_000_000);
   },
 });
@@ -229,62 +193,17 @@ Clarinet.test({
     block.receipts[1].result.expectOk().expectUint(1);
 
     // verify status for users with locking period 1
-    let lockingPeriod = 1;
-    let response = getStatusListsLastIndex(
-      pool_1.address,
-      1,
-      lockingPeriod,
-      chain,
-      pool_1
-    );
+    let response = getStatusListsLastIndex(pool_1.address, 1, chain, pool_1);
     response.result.expectUint(0);
 
-    response = getStatusList(
-      pool_1.address,
-      1,
-      lockingPeriod,
-      0,
-      chain,
-      pool_1
-    );
+    response = getStatusList(pool_1.address, 1, 0, chain, pool_1);
     let statusList = response.result.expectTuple();
     let members = statusList["status-list"].expectSome().expectList();
     members[0].expectTuple().cycle.expectUint(0);
 
-    // verify status for users with locking period 2
-    lockingPeriod = 2;
-    response = getStatusListsLastIndex(
-      pool_2.address,
-      1,
-      lockingPeriod,
-      chain,
-      deployer
-    );
-    response.result.expectUint(0);
-
-    response = getStatusList(
-      pool_2.address,
-      1,
-      lockingPeriod,
-      0,
-      chain,
-      deployer
-    );
-    statusList = response.result.expectTuple();
-    members = statusList["status-list"].expectSome().expectList();
-    assertEquals(members.length, 1);
-    members[0].expectTuple().cycle.expectUint(0);
-
     // verify that information are based on delegate-stx call only
-    // if locking period is more than 1 cycle there is still only one entry
-    response = getStatusList(
-      pool_2.address,
-      2,
-      lockingPeriod,
-      0,
-      chain,
-      deployer
-    );
+    // there is always only one entry
+    response = getStatusList(pool_2.address, 2, 0, chain, deployer);
     statusList = response.result.expectTuple();
     members = statusList["status-list"].expectNone();
 
@@ -294,7 +213,13 @@ Clarinet.test({
     let info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
     info["user-info"].expectTuple().cycle.expectUint(0);
-    info["user-info"].expectTuple()["lock-period"].expectUint(1);
+    info["user-info"]
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
+
     info["total"].expectUint(10_000_000_000_000);
 
     response = getStatus(pool_2.address, wallet_2.address, chain, deployer);
@@ -302,7 +227,13 @@ Clarinet.test({
     info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
     info["user-info"].expectTuple().cycle.expectUint(0);
-    info["user-info"].expectTuple()["lock-period"].expectUint(2);
+    info["user-info"]
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("00102030405060708090a0b0c0d0e0f000102030")
+      );
+
     info["total"].expectUint(10_000_000_000_000);
   },
 });

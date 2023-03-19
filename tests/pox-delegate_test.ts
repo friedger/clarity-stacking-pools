@@ -32,7 +32,6 @@ Clarinet.test({
         100,
         undefined,
         { version: "0x01", hashbytes: "0x123456" },
-        2,
         wallet_1
       ),
     ]);
@@ -55,7 +54,6 @@ Clarinet.test({
         100,
         undefined,
         { version: "0x01", hashbytes: "0x123456" },
-        2,
         wallet_1
       ),
     ]);
@@ -86,7 +84,6 @@ Clarinet.test({
           version: "0x01",
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
-        2,
         wallet_1
       ),
 
@@ -101,7 +98,6 @@ Clarinet.test({
           version: "0x01",
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
-        2,
         2,
         wallet_2
       ),
@@ -136,7 +132,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);

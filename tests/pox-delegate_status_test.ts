@@ -16,6 +16,7 @@ import {
   btcAddrWallet2,
   poxAddrPool1,
 } from "./constants.ts";
+import { toBytes, hexToBytes } from "https://esm.sh/@stacks/common";
 
 Clarinet.test({
   name: "Ensure that getStatus returns correct values",
@@ -25,7 +26,6 @@ Clarinet.test({
     let pool_1 = accounts.get("deployer")!;
     let pool_2 = accounts.get("wallet_8")!;
     const poxDelegationContract = pool_1.address + ".pox-delegation";
-    const lockingPeriod = 2;
 
     // info before delegation
     let response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
@@ -45,7 +45,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet1,
-        lockingPeriod,
         wallet_1
       ),
       delegateStx(
@@ -54,7 +53,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet2,
-        lockingPeriod,
         wallet_2
       ),
     ]);
@@ -68,7 +66,13 @@ Clarinet.test({
     response.result.expectErr().expectUint(Errors.NoStackerInfo);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
-    response.result.expectSome().expectTuple()["lock-period"].expectUint(2);
+    response.result
+      .expectSome()
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
 
     block = chain.mineBlock([
       delegateStackStx(
@@ -80,7 +84,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        lockingPeriod,
         pool_1
       ),
     ]);
@@ -96,7 +99,13 @@ Clarinet.test({
     info["total"].expectUint(100_000_000);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
-    response.result.expectSome().expectTuple()["lock-period"].expectUint(2);
+    response.result
+      .expectSome()
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
 
     // status after commit
     block = chain.mineBlock([
@@ -113,7 +122,13 @@ Clarinet.test({
     info["total"].expectUint(100_000_000);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
-    response.result.expectSome().expectTuple()["lock-period"].expectUint(2);
+    response.result
+      .expectSome()
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
 
     // get status with wrong pool address
     response = getStatus(pool_2.address, wallet_1.address, chain, wallet_1);
@@ -121,6 +136,12 @@ Clarinet.test({
     info["total"].expectUint(0);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
-    response.result.expectSome().expectTuple()["lock-period"].expectUint(2);
+    response.result
+      .expectSome()
+      .expectTuple()
+      ["pox-addr"].expectTuple()
+      .hashbytes.expectBuff(
+        hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
+      );
   },
 });

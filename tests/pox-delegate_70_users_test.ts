@@ -73,7 +73,6 @@ Clarinet.test({
           undefined,
           undefined,
           btcAddrWallet1,
-          1,
           user
         )
       )
@@ -88,7 +87,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet1,
-        1,
         wallet_1
       ),
     ]);
@@ -107,7 +105,6 @@ Clarinet.test({
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
         40,
-        1,
         deployer
       ),
       delegateStackStx(
@@ -122,7 +119,6 @@ Clarinet.test({
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
         40,
-        1,
         deployer
       ),
       delegateStackStx(
@@ -137,7 +133,6 @@ Clarinet.test({
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
         40,
-        1,
         deployer
       ),
       delegateStackStx(
@@ -152,14 +147,13 @@ Clarinet.test({
           hashbytes: "0xb0b75f408a29c271d107e05d614d0ff439813d02",
         },
         40,
-        1,
         deployer
       ),
     ]);
     block.receipts.map((r: any) => r.result.expectOk());
 
     // verify total
-    const total = getTotal(deployer.address, 1, 1, chain, deployer)
+    const total = getTotal(deployer.address, 1, chain, deployer)
     total.result.expectUint(10_000_070_000_000);
   },
 });
