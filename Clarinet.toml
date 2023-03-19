@@ -5,9 +5,6 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 
-[[project.requirements]]
-contract_id = 'SP000000000000000000002Q6VF78.pox-2'
-
 [contracts.pox-delegation]
 path = 'contracts/pox-delegation.clar'
 clarity_version = 2

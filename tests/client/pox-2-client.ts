@@ -58,11 +58,21 @@ export function getPartialStackedByCycle(
   );
 }
 
-
-export function getPoxInfo(
+export function getRewardSetPoxAddress(
+  cycle: number,
+  index: number,
   chain: Chain,
   user: Account
 ) {
+  return chain.callReadOnlyFn(
+    "SP000000000000000000002Q6VF78.pox-2",
+    "get-reward-set-pox-address",
+    [types.uint(cycle), types.uint(index)],
+    user.address
+  );
+}
+
+export function getPoxInfo(chain: Chain, user: Account) {
   return chain.callReadOnlyFn(
     "SP000000000000000000002Q6VF78.pox-2",
     "get-pox-info",

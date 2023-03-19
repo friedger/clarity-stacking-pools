@@ -9,29 +9,23 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: pox-delegation
+            contract-name: fp-delegation
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            remap-principals:
-              SP000000000000000000002Q6VF78: ST000000000000000000002AMW42H
-            cost: 119980
-            path: contracts/pox-delegation.clar
+            cost: 149140
+            path: contracts/fp-delegation.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
-            contract-name: fp-delegation
+            contract-name: pox-delegation
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            remap-principals:
-              SP000000000000000000002Q6VF78: ST000000000000000000002AMW42H
-            cost: 23620
-            path: contracts/fp-delegation.clar
+            cost: 145350
+            path: contracts/pox-delegation.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: helper
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            remap-principals:
-              SP000000000000000000002Q6VF78: ST000000000000000000002AMW42H
-            cost: 2370
+            cost: 5390
             path: contracts/helper.clar
             anchor-block-only: true
             clarity-version: 2

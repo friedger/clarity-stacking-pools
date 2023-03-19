@@ -1,6 +1,5 @@
 import { Chain, Tx, types, Account } from "../deps.ts";
 
-
 export function fpDelegationAllowContractCaller(
   contractCaller: string,
   untilBurnHt: number | undefined,
@@ -27,14 +26,22 @@ export function delegateStx(amount: number, user: Account) {
 }
 
 export function delegateStackStx(
-  amountUstx: number,
   stacker: Account,
   user: Account
 ) {
   return Tx.contractCall(
     "fp-delegation",
     "delegate-stack-stx",
-    [types.uint(amountUstx), types.principal(stacker.address)],
+    [types.principal(stacker.address)],
+    user.address
+  );
+}
+
+export function delegateStackStxMany(stackers: Account[], user: Account) {
+  return Tx.contractCall(
+    "fp-delegation",
+    "delegate-stack-stx-many",
+    [types.list(stackers.map((s) => types.principal(s.address)))],
     user.address
   );
 }
