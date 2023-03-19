@@ -35,6 +35,10 @@
 (define-private (pox-get-stacker-info (user principal))
    (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
 
+
+(define-read-only (get-delegated-amount (user principal))
+  (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
+
 ;; Revoke and delegate stx
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
   (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
@@ -46,14 +50,17 @@
 ;; Helper functions
 ;;
 
+;; Returns minimum
 (define-private (min (amount-1 uint) (amount-2 uint))
   (if (< amount-1 amount-2)
     amount-1
     amount-2))
 
-;; converts response of type (response tuple int) to (response tuple uint)
-(define-read-only (as-response-with-uint (result (response {stacker: principal, total-locked: uint} int)))
-  (match result success (ok success) err (err (to-uint err))))
+;; Returns maximum
+(define-private (max (amount-1 uint) (amount-2 uint))
+  (if (> amount-1 amount-2)
+    amount-1
+    amount-2))
 ;;
 ;; Helper functions for "grouped-stackers" map
 ;;
@@ -80,12 +87,13 @@
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
   (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
         (lock-period (get lock-period details))
-        (last-index (get-status-lists-last-index pool reward-cycle lock-period)))
-      (match (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index})
+        (last-index (get-status-lists-last-index pool reward-cycle lock-period))
+        (key {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}))
+      (match (map-get? grouped-stackers key)
         stackers (match (as-max-len? (append stackers details) u30)
-                updated-list (map-set grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}) updated-list)
+                updated-list (map-set grouped-stackers key updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
-        (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: last-index}) (list details)))
+        (map-insert grouped-stackers key (list details)))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details)))))
 
 ;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
@@ -119,13 +127,33 @@
                       (start-burn-ht uint)
                       (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
-  (let ((user (get user details)))
-    (let ((pox-address (get pox-address context))
+  (let ((user (get user details))
+        (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
+      (pox-delegate-stack-stx-amount user amount-ustx context)))
+
+(define-private (pox-delegate-stack-stx-simple (user principal)
+                  (context (tuple
+                      (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
+                      (start-burn-ht uint)
+                      (lock-period uint)
+                      (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
+  (let ((buffer-amount u1000000)
+        (allowed-amount (min (get-delegated-amount user) (stx-get-balance user)))
+        (save-amount (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount))
+        (amount-ustx (max save-amount (get locked (stx-account user)))))
+      (pox-delegate-stack-stx-amount user amount-ustx context)))
+
+
+(define-private (pox-delegate-stack-stx-amount (user principal) (amount-ustx uint)
+                  (context (tuple
+                      (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
+                      (start-burn-ht uint)
+                      (lock-period uint)
+                      (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
+  (let ((pox-address (get pox-address context))
         (start-burn-ht (get start-burn-ht context))
         (lock-period (get lock-period context))
-        (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
-      (let
-        ((stack-result
+        (stack-result
           ;; call delegate-stack-stx
           (if (> amount-ustx u0)
             (match (map-get? user-data user)
@@ -145,7 +173,7 @@
         {pox-address: pox-address,
           start-burn-ht: start-burn-ht,
           lock-period: lock-period,
-          result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))}))))
+          result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))}))
 
 ;;
 ;; Public function
@@ -161,8 +189,7 @@
               (lock-period uint))
   (begin
     ;; must be called directly by the tx-sender or by an allowed contract-caller
-      (asserts! (check-caller-allowed)
-                err-stacking-permission-denied)
+    (asserts! (check-caller-allowed) err-stacking-permission-denied)
     (map-set user-data tx-sender
                 {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle), lock-period: lock-period})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
@@ -179,8 +206,18 @@
         (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
       (err u1))) ;; defines uint as error type
 
+;; Pool admins call this function to lock stacks of their pool members in batches
+(define-public (delegate-stack-stx-simple (users (list 30 principal))
+                                    (pox-address { version: (buff 1), hashbytes: (buff 32) })
+                                    (start-burn-ht uint)
+                                    (lock-period uint))
+    (if true
+      (ok (get result
+        (fold pox-delegate-stack-stx-simple users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
+      (err u1))) ;; defines uint as error type
+
 ;;
-;; Functions about alloance of delegation/stacking contract calls
+;; Functions about allowance of delegation/stacking contract calls
 ;;
 
 ;; Give a contract-caller authorization to call stacking methods
