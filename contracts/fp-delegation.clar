@@ -14,7 +14,7 @@
 ;;    For stackerd user, extends locking and if needed increases amount.
 ;;    The amount is the minimum of the balance and the delegate amount
 ;;    minus some STX as buffer.
-;;    The STX buffer is left unlocked for users to call revoke-delegation.
+;;    The STX buffer is left unlocked for users to call revoke-delegate-stx.
 ;; 4. If possible, commits the pool's amount.
 ;; Returns (ok true) if the aggregation commit happened, otherwise (ok false).
 
