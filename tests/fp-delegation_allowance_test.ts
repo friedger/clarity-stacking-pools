@@ -63,6 +63,6 @@ Clarinet.test({
     ]);
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
-    expectTotalStackedByCycle(1, 0, 20_000_000_000_000, chain, deployer);
+    expectTotalStackedByCycle(1, 0, 19_999_999_000_000, chain, deployer);
   },
 });

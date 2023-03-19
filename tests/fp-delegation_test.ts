@@ -21,8 +21,8 @@ Clarinet.test({
       allowContractCaller(fpDelegationContract, undefined, wallet_1),
       allowContractCaller(fpDelegationContract, undefined, wallet_2),
 
-      delegateStx(20_000_000_000_000, wallet_1),
-      delegateStx(2_000_000, wallet_2),
+      delegateStx(20_000_000_000_100, wallet_1),
+      delegateStx(2_100_000, wallet_2),
     ]);
 
     // check allow contract caller
@@ -33,7 +33,7 @@ Clarinet.test({
     block.receipts[3].result.expectOk().expectBool(true);
 
     expectPartialStackedByCycle(poxAddrFP, 1, undefined, chain, deployer);
-    expectTotalStackedByCycle(1, 0, 20_000_002_000_000, chain, deployer);
+    expectTotalStackedByCycle(1, 0, 20_000_000_100_100, chain, deployer);
 
   },
 });
@@ -53,10 +53,10 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(false);
     console.log(block.receipts[1].events);
 
-    expectPartialStackedByCycle(poxAddrFP, 1, 2_000_000, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectTotalStackedByCycle(1, 0, undefined, chain, deployer);
 
     chain.mineEmptyBlock(2100);
@@ -87,9 +87,9 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(false);
 
-    expectPartialStackedByCycle(poxAddrFP, 1, 2_000_000, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // advance to middle of next cycle
