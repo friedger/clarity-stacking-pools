@@ -1,10 +1,11 @@
-;; FAST Pool - Self-service non-custodial stacking pool
-;; The pool locks for 1 cycle, amount can be increased at each cycle.
+;; @contract FAST Pool - Self-service non-custodial stacking pool
+;; @version 1
+;; The pool locks for 1 cycle, amount can be increased for each cycle.
 ;; Users trust the reward admin that they will receive their share of rewards.
 ;; Reward admin can be a contract as well.
 ;;
-;; User calls delegate-stx once.
-;; For next cycles, users can call delegate-stx
+;; User calls delegate-stx at first.
+;; For next cycles, users can call delegate-stx again
 ;; or ask automation, friends or family to extend stacking using delegate-stack-stx.
 
 ;; Self-service function "delegate-stx" does the following:
@@ -19,15 +20,23 @@
 ;; Returns (ok true) if the aggregation commit happened, otherwise (ok false).
 
 ;; Pool operator function "delegate-stack-stx" does
-;; step 3. (for stacked users) and 4. from "delegate-stx" for
-;; the following cycles.
+;; step 3. "for stacked users" and step 4. from above for
+;; the next cycle.
 ;; This function can be called by anyone when less than 1050 blocks are
-;; left until the cycle start. This gives the stacker 1 week to unlock
-;; the STX if wanted before it can be locked again for friends and family (or enemies).
+;; left until the next cycle starts. This gives the stacker 1 week to revoke delegation
+;; if wanted before it can be locked again for friends and family (or enemies).
 
 ;;
 ;; Data storage
 ;;
+
+(define-constant err-unauthorized (err u401))
+(define-constant err-forbidden (err u403))
+(define-constant err-too-early (err u500))
+(define-constant err-decrease-forbidden (err u503))
+(define-constant err-pox-address-deactivated (err u504))
+;; Error code 9 is used by pox-2 contract for stacking-permission-denied
+(define-constant err-stacking-permission-denied (err u609))
 
 ;; Map of reward cycle to pox reward set index.
 ;; Reward set index gives access to the total locked stx of the pool.
@@ -47,13 +56,6 @@
 ;; Half cycle lenght is 1050 for mainnet
 (define-constant half-cycle-length (/ (get reward-cycle-length (unwrap-panic (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-pox-info))) u2))
 
-(define-constant err-unauthorized (err u401))
-(define-constant err-forbidden (err u403))
-(define-constant err-too-early (err u500))
-(define-constant err-decrease-forbidden (err u503))
-(define-constant err-pox-address-deactivated (err u504))
-;; Error code 9 is used by pox-2 contract
-(define-constant err-stacking-permission-denied (err u609))
 ;; Allowed contract-callers
 (define-map allowance-contract-callers
     { sender: principal, contract-caller: principal }
@@ -63,7 +65,10 @@
 ;; Public functions
 ;;
 
-;; Self-service pool function
+;; @desc Self-service pool function
+;; Delegates, stacks and aggregates commits in one single transaction
+;; @param amount-ustx; amount to delegate. The amount locked depends on the locked and unlocked STX balance of the caller.
+;; @returns (ok true) if commits were aggregated, otherwise false.
 (define-public (delegate-stx (amount-ustx uint))
   (let ((user tx-sender)
         (current-cycle (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)))
@@ -75,9 +80,11 @@
     ;; Do 4.
     (ok (maybe-stack-aggregation-commit current-cycle))))
 
-;; Stacks the delegated amount for the given user for the next cycle.
+;; @desc Stacks the delegated amount for the given user for the next cycle.
 ;; This function can be called by automation, friends or family for user that have delegated once.
-;; This function can be called only after the current cycle is half through
+;; This function can be called only after the current cycle is half through.
+;; @param user; current pool member who should particpate in the next cycle
+;; @returns (ok true) if commits were aggregated, otherwise false.
 (define-public (delegate-stack-stx (user principal))
   (let ((current-cycle (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)))
     (asserts! (can-lock-now current-cycle) err-too-early)
@@ -86,9 +93,11 @@
     ;; Do 4.
     (ok (maybe-stack-aggregation-commit current-cycle))))
 
-;; Stacks the delegated amount for the given users for the next cycle.
+;; @desc Stacks the delegated amount for all given users for the next cycle.
 ;; This function can be called by automation, friends or family for users that have delegated once.
-;; This function can be called only after the current cycle is half through
+;; This function can be called only after the current cycle is half through.
+;; @desc users; list of current pool members who should particpate in the next cycle.
+;; @returns list of results of locking for each user.
 (define-public (delegate-stack-stx-many (users (list 30 principal)))
   (let ((current-cycle (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle))
         (start-burn-ht (+ burn-block-height u1)))
@@ -133,6 +142,7 @@
               (delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht)
               (err (* u1000 (to-uint error)))))))
 
+;; used for folding user list with lock-delegated-stx function
 (define-private (lock-delegated-stx-fold (user principal) (result (list 30 (response {lock-amount:uint, stacker: principal, unlock-burn-height: uint} uint))))
   (let ((stack-result (lock-delegated-stx user)))
     (unwrap-panic (as-max-len? (append result stack-result) u30))))
@@ -261,12 +271,6 @@
 ;; Returns minimum
 (define-private (min (amount-1 uint) (amount-2 uint))
   (if (< amount-1 amount-2)
-    amount-1
-    amount-2))
-
-;; Returns maximum
-(define-private (max (amount-1 uint) (amount-2 uint))
-  (if (> amount-1 amount-2)
     amount-1
     amount-2))
 
