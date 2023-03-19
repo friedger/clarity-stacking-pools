@@ -85,12 +85,12 @@
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint}))
   (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
         (last-index (get-status-lists-last-index pool reward-cycle))
-        (key {pool: pool, reward-cycle: reward-cycle, index: last-index}))
-      (match (map-get? grouped-stackers key)
+        (stacker-key {pool: pool, reward-cycle: reward-cycle, index: last-index}))
+      (match (map-get? grouped-stackers stacker-key)
         stackers (match (as-max-len? (append stackers details) u30)
-                updated-list (map-set grouped-stackers key updated-list)
+                updated-list (map-set grouped-stackers stacker-key updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
-        (map-insert grouped-stackers key (list details)))
+        (map-insert grouped-stackers stacker-key (list details)))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle} (+ (get-total pool reward-cycle) (get lock-amount details)))))
 
 ;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
