@@ -52,7 +52,7 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
     block.receipts[2].result.expectOk().expectBool(true);
-    // verify results for delegat-stx calls
+    // verify results for delegate-stx calls
     block.receipts[3].result.expectOk().expectBool(true);
     block.receipts[4].result.expectOk().expectBool(true);
 

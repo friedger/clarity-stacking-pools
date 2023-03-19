@@ -43,6 +43,15 @@ export function stackAggregationIncrease(
   );
 }
 
+export function revokeDelegateStx(user: Account) {
+  return Tx.contractCall(
+    "SP000000000000000000002Q6VF78.pox-2",
+    "revoke-delegate-stx",
+    [],
+    user.address
+  );
+}
+
 export function getPartialStackedByCycle(
   poolPoxAddr: { version: string; hashbytes: string },
   cycle: number,
