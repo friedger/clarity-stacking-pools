@@ -36,7 +36,6 @@ Clarinet.test({
         6300,
         undefined,
         btcAddrWallet1,
-        2,
         wallet_1
       ),
 
@@ -46,7 +45,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet2,
-        2,
         wallet_2
       ),
 
@@ -63,7 +61,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        2,
         deployer
       ),
     ]);
@@ -81,12 +78,12 @@ Clarinet.test({
     lockingInfoList[0]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(6300);
+      ["unlock-burn-height"].expectUint(4200);
 
     lockingInfoList[1]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(6300);
+      ["unlock-burn-height"].expectUint(4200);
 
     // commit for cycle 1
     block = chain.mineBlock([
@@ -117,7 +114,6 @@ Clarinet.test({
         4200,
         undefined,
         btcAddrWallet1,
-        1,
         wallet_1
       ),
 
@@ -127,7 +123,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet2,
-        2,
         wallet_2
       ),
     ]);
@@ -161,7 +156,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);
@@ -187,7 +181,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);
@@ -216,7 +209,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet1,
-        1,
         wallet_1
       ),
 
@@ -229,7 +221,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);
@@ -253,7 +244,6 @@ Clarinet.test({
         undefined,
         undefined,
         btcAddrWallet1,
-        1,
         wallet_1
       ),
     ]);
@@ -270,7 +260,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         40,
-        1,
         deployer
       ),
     ]);
@@ -315,7 +304,6 @@ Clarinet.test({
         ],
         poxAddrPool1,
         block.block_height + 10,
-        1,
         deployer
       ),
     ]);

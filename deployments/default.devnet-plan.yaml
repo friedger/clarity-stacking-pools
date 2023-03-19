@@ -11,22 +11,22 @@ plan:
         - contract-publish:
             contract-name: fp-delegation
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 149140
+            cost: 151780
             path: contracts/fp-delegation.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: pox-delegation
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 145350
+            cost: 163280
             path: contracts/pox-delegation.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: helper
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 5390
-            path: contracts/helper.clar
+            cost: 7410
+            path: contracts/testing/helper.clar
             anchor-block-only: true
             clarity-version: 2
       epoch: "2.1"

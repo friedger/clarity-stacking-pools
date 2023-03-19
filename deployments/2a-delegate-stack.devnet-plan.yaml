@@ -13,9 +13,9 @@ plan:
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             method: delegate-stack-stx
             parameters:
-              - "(list {amount-ustx: u2200000000000, user: 'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5})"
-              - "{version: 0x00, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
-              - u133
+              - "(list {amount-ustx: u220000000000000, user: 'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5})"
+              - "{version: 0x05, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
+              - u129
               - u1
             cost: 10000
         - contract-call:

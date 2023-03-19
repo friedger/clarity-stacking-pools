@@ -22,7 +22,6 @@ export function delegateStx(
   untilBurnHt: number | undefined,
   poolPoxAddr: { version: string; hashbytes: string } | undefined,
   userPoxAddr: { version: string; hashbytes: string },
-  lockingPeriod: number,
   user: Account
 ) {
   return Tx.contractCall(
@@ -34,7 +33,6 @@ export function delegateStx(
       untilBurnHt ? types.some(types.uint(untilBurnHt)) : types.none(),
       poolPoxAddr ? types.some(types.tuple(poolPoxAddr)) : types.none(),
       types.tuple(userPoxAddr),
-      types.uint(lockingPeriod),
     ],
     user.address
   );
@@ -44,7 +42,6 @@ export function delegateStackStx(
   members: { user: Account; amountUstx: number }[],
   poolPoxAddr: { version: string; hashbytes: string },
   startBurnHt: number,
-  lockingPeriod: number,
   poolOperator: Account
 ) {
   return Tx.contractCall(
@@ -62,7 +59,6 @@ export function delegateStackStx(
 
       types.tuple(poolPoxAddr),
       types.uint(startBurnHt),
-      types.uint(lockingPeriod),
     ],
     poolOperator.address
   );
@@ -72,7 +68,6 @@ export function delegateStackStxSimple(
   members: Account[],
   poolPoxAddr: { version: string; hashbytes: string },
   startBurnHt: number,
-  lockingPeriod: number,
   poolOperator: Account
 ) {
   return Tx.contractCall(
@@ -82,7 +77,6 @@ export function delegateStackStxSimple(
       types.list(members.map((u) => types.principal(u.address))),
       types.tuple(poolPoxAddr),
       types.uint(startBurnHt),
-      types.uint(lockingPeriod),
     ],
     poolOperator.address
   );
@@ -90,7 +84,6 @@ export function delegateStackStxSimple(
 export function getStatusListsLastIndex(
   poolAddress: string,
   cycle: number,
-  lockingPeriod: number,
   chain: Chain,
   user: Account
 ) {
@@ -100,7 +93,6 @@ export function getStatusListsLastIndex(
     [
       types.principal(poolAddress),
       types.uint(cycle),
-      types.uint(lockingPeriod),
     ],
     user.address
   );
@@ -109,7 +101,6 @@ export function getStatusListsLastIndex(
 export function getStatusList(
   poolAddress: string,
   cycle: number,
-  lockingPeriod: number,
   index: number,
   chain: Chain,
   user: Account
@@ -120,7 +111,6 @@ export function getStatusList(
     [
       types.principal(poolAddress),
       types.uint(cycle),
-      types.uint(lockingPeriod),
       types.uint(index),
     ],
     user.address
@@ -130,7 +120,6 @@ export function getStatusList(
 export function getTotal(
   poolAddress: string,
   cycle: number,
-  lockingPeriod: number,
   chain: Chain,
   user: Account
 ) {
@@ -140,7 +129,6 @@ export function getTotal(
     [
       types.principal(poolAddress),
       types.uint(cycle),
-      types.uint(lockingPeriod),
     ],
     user.address
   );

@@ -13,18 +13,17 @@
 ;; keep track of the last delegation
 ;; pox-addr: raw bytes of user's account to receive rewards, can be encoded as btc or stx address
 ;; cycle: cycle id of time of delegation
-;; lock-period: desired number of cycles to lock
-(define-map user-data principal {pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint})
+(define-map user-data principal {pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint})
 
-;; Keep track of stackers grouped by pool, reward-cycle id and lock-period
+;; Keep track of stackers grouped by pool and reward-cycle id
 ;; "grouped-stackers-len" returns the number of lists for the given group
 ;; "grouped-stackers" returns the actual list
-(define-map grouped-stackers {pool: principal, reward-cycle: uint, lock-period: uint, index: uint}
-  (list 30 {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
-(define-map grouped-stackers-len {pool: principal, reward-cycle: uint, lock-period: uint} uint)
+(define-map grouped-stackers {pool: principal, reward-cycle: uint, index: uint}
+  (list 30 {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint}))
+(define-map grouped-stackers-len {pool: principal, reward-cycle: uint} uint)
 
-;; Keep track of total stxs stacked grouped by pool, reward-cycle id and lock-period
-(define-map grouped-totals {pool: principal, reward-cycle: uint, lock-period: uint} uint)
+;; Keep track of total stxs stacked grouped by pool and reward-cycle id
+(define-map grouped-totals {pool: principal, reward-cycle: uint} uint)
 
 ;; allowed contract-callers
 (define-map allowance-contract-callers
@@ -65,48 +64,45 @@
 ;; Helper functions for "grouped-stackers" map
 ;;
 
-(define-private (merge-details (stacker {lock-amount: uint, stacker: principal, unlock-burn-height: uint}) (user {pox-addr: {hashbytes: (buff 32), version: (buff 1)}, cycle: uint, lock-period: uint}))
+(define-private (merge-details (stacker {lock-amount: uint, stacker: principal, unlock-burn-height: uint}) (user {pox-addr: {hashbytes: (buff 32), version: (buff 1)}, cycle: uint}))
   {lock-amount: (get lock-amount stacker),
   stacker: (get stacker stacker),
   unlock-burn-height: (get unlock-burn-height stacker),
   pox-addr: (get pox-addr user),
-  cycle: (get cycle user),
-  lock-period: (get lock-period user)})
+  cycle: (get cycle user)})
 
-(define-private (insert-in-new-list (pool principal) (reward-cycle uint) (last-index uint) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
+(define-private (insert-in-new-list (pool principal) (reward-cycle uint) (last-index uint) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint}))
   (let ((index (+ last-index u1)))
-    (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details), index: index}) (list details))
-    (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: (get lock-period details)} index)))
+    (map-insert grouped-stackers (print {pool: pool, reward-cycle: reward-cycle, index: index}) (list details))
+    (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle} index)))
 
 
-;; Get the number of lists of stackers that have locked their stx for the given pool, cycle and lock-period.
-(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint) (lock-period uint))
-  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period}))
+;; Get the number of lists of stackers that have locked their stx for the given pool and cycle.
+(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint))
+  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle}))
 )
 
-(define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint, lock-period: uint}))
+(define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint}))
   (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
-        (lock-period (get lock-period details))
-        (last-index (get-status-lists-last-index pool reward-cycle lock-period))
-        (key {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: last-index}))
+        (last-index (get-status-lists-last-index pool reward-cycle))
+        (key {pool: pool, reward-cycle: reward-cycle, index: last-index}))
       (match (map-get? grouped-stackers key)
         stackers (match (as-max-len? (append stackers details) u30)
                 updated-list (map-set grouped-stackers key updated-list)
                 (insert-in-new-list pool reward-cycle last-index details))
         (map-insert grouped-stackers key (list details)))
-      (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period} (+ (get-total pool reward-cycle lock-period) (get lock-amount details)))))
+      (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle} (+ (get-total pool reward-cycle) (get lock-amount details)))))
 
 ;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
 ;; parameter amount-ustx must be lower or equal the stx balance and the delegated amount
 (define-private (pox-delegate-stack-extend-increase (user principal)
                     (amount-ustx uint)
                     (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
-                    (start-burn-ht uint)
-                    (lock-period uint))
+                    (start-burn-ht uint))
   (let ((status (stx-account user)))
     (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
     (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
-                                  user pox-address lock-period)
+                                  user pox-address u1)
       success (if (> amount-ustx (get locked status))
                 (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
                               user pox-address (- amount-ustx (get locked status)))
@@ -125,7 +121,6 @@
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
                       (start-burn-ht uint)
-                      (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
   (let ((user (get user details))
         (user-account (stx-account user))
@@ -136,7 +131,6 @@
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
                       (start-burn-ht uint)
-                      (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
   (let ((buffer-amount u1000000)
         (user-account (stx-account user))
@@ -149,31 +143,28 @@
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
                       (start-burn-ht uint)
-                      (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
   (let ((pox-address (get pox-address context))
         (start-burn-ht (get start-burn-ht context))
-        (lock-period (get lock-period context))
         (stack-result
           ;; call delegate-stack-stx
           (if (> amount-ustx u0)
             (match (map-get? user-data user)
               user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
                               user amount-ustx
-                              pox-address start-burn-ht lock-period)
+                              pox-address start-burn-ht u1)
                       stacker-details  (begin
                               ;; store result on success
                               (map-set-details tx-sender (merge-details stacker-details user-details))
                               (ok stacker-details))
                       error (if (is-eq error 3) ;; check whether user is already stacked
-                              (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht lock-period)
+                              (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht)
                               (err (* u1000 (to-uint error)))))
             err-not-found)
           err-non-positive-amount)))
         ;; return a tuple even if delegate-stack-stx call failed
         {pox-address: pox-address,
           start-burn-ht: start-burn-ht,
-          lock-period: lock-period,
           result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))}))
 
 ;;
@@ -183,16 +174,14 @@
 ;; Users call this function to delegate the stacking rights to a pool.
 ;;
 ;; user-pox-addr: raw bytes of user's address that should be used for payout of rewards by pool admins.
-;; lock-period: desired lock period that pool admin should respect.
 (define-public (delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint))
               (pool-pox-addr (optional (tuple (hashbytes (buff 32)) (version (buff 1)))))
-              (user-pox-addr (tuple (hashbytes (buff 32)) (version (buff 1))))
-              (lock-period uint))
+              (user-pox-addr (tuple (hashbytes (buff 32)) (version (buff 1)))))
   (begin
     ;; must be called directly by the tx-sender or by an allowed contract-caller
     (asserts! (check-caller-allowed) err-stacking-permission-denied)
     (map-set user-data tx-sender
-                {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle), lock-period: lock-period})
+                {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
 ;; Pool admins call this function to lock stacks of their pool members in batches
@@ -200,21 +189,19 @@
                                       (user principal)
                                       (amount-ustx uint))))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
-                                    (start-burn-ht uint)
-                                    (lock-period uint))
+                                    (start-burn-ht uint))
     (if true
       (ok (get result
-        (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
+        (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
       (err u1))) ;; defines uint as error type
 
 ;; Pool admins call this function to lock stacks of their pool members in batches
 (define-public (delegate-stack-stx-simple (users (list 30 principal))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
-                                    (start-burn-ht uint)
-                                    (lock-period uint))
+                                    (start-burn-ht uint))
     (if true
       (ok (get result
-        (fold pox-delegate-stack-stx-simple users {start-burn-ht: start-burn-ht, pox-address: pox-address, lock-period: lock-period, result: (list)})))
+        (fold pox-delegate-stack-stx-simple users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
       (err u1))) ;; defines uint as error type
 
 ;;
@@ -272,13 +259,13 @@
   (let ((stacker-info (unwrap! (pox-get-stacker-info user) err-no-stacker-info)))
       (ok {stacker-info: stacker-info,
            user-info: (unwrap! (map-get? user-data user) err-no-user-info),
-           total: (get-total pool (get first-reward-cycle stacker-info) (get lock-period stacker-info))})))
+           total: (get-total pool (get first-reward-cycle stacker-info))})))
 
-;; Get a list of stackers that have locked their stx for the given pool, cycle and lock-period.
+;; Get a list of stackers that have locked their stx for the given pool and cycle.
 ;; index: must be smaller than get-status-lists-last-index
-(define-read-only (get-status-list (pool principal) (reward-cycle uint)  (lock-period uint) (index uint))
-  {total: (get-total pool reward-cycle lock-period),
-  status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period, index: index})}
+(define-read-only (get-status-list (pool principal) (reward-cycle uint) (index uint))
+  {total: (get-total pool reward-cycle),
+  status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, index: index})}
 )
 
 ;; Get information about last delegation call for a given user
@@ -289,9 +276,9 @@
 (define-read-only (get-stx-account (user principal))
   (stx-account user))
 
-;; Get total stacks locked by given pool, reward-cycle and lock-period.
+;; Get total stacks locked by given pool, reward-cycle.
 ;; The total for a given reward cycle needs to be calculated off-chain
 ;; depending on the pool's policy.
-(define-read-only (get-total (pool principal) (reward-cycle uint) (lock-period uint))
-  (default-to u0 (map-get? grouped-totals {pool: pool, reward-cycle: reward-cycle, lock-period: lock-period}))
+(define-read-only (get-total (pool principal) (reward-cycle uint))
+  (default-to u0 (map-get? grouped-totals {pool: pool, reward-cycle: reward-cycle}))
 )
