@@ -271,7 +271,7 @@
     amount-2))
 
 ;;
-;; Functions about alloance of delegation/stacking contract calls
+;; Functions about allowance of delegation/stacking contract calls
 ;;
 
 ;; Give a contract-caller authorization to call stacking methods

@@ -1,6 +1,5 @@
 import { Chain, Tx, types, Account } from "../deps.ts";
 
-
 export function poxDelegationAllowContractCaller(
   contractCaller: string,
   untilBurnHt: number | undefined,
@@ -69,6 +68,25 @@ export function delegateStackStx(
   );
 }
 
+export function delegateStackStxSimple(
+  members: Account[],
+  poolPoxAddr: { version: string; hashbytes: string },
+  startBurnHt: number,
+  lockingPeriod: number,
+  poolOperator: Account
+) {
+  return Tx.contractCall(
+    "pox-delegation",
+    "delegate-stack-stx-simple",
+    [
+      types.list(members.map((u) => types.principal(u.address))),
+      types.tuple(poolPoxAddr),
+      types.uint(startBurnHt),
+      types.uint(lockingPeriod),
+    ],
+    poolOperator.address
+  );
+}
 export function getStatusListsLastIndex(
   poolAddress: string,
   cycle: number,
