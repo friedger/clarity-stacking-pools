@@ -128,7 +128,8 @@
                       (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
   (let ((user (get user details))
-        (amount-ustx (min (get amount-ustx details) (stx-get-balance user))))
+        (user-account (stx-account user))
+        (amount-ustx (min (get amount-ustx details) (+ (get locked user-account) (get unlocked user-account)))))
       (pox-delegate-stack-stx-amount user amount-ustx context)))
 
 (define-private (pox-delegate-stack-stx-simple (user principal)
@@ -138,9 +139,9 @@
                       (lock-period uint)
                       (result (list 30 (response (tuple (lock-amount uint) (stacker principal) (unlock-burn-height uint)) uint))))))
   (let ((buffer-amount u1000000)
-        (allowed-amount (min (get-delegated-amount user) (stx-get-balance user)))
-        (save-amount (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount))
-        (amount-ustx (max save-amount (get locked (stx-account user)))))
+        (user-account (stx-account user))
+        (allowed-amount (min (get-delegated-amount user) (+ (get locked user-account) (get unlocked user-account))))
+        (amount-ustx (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount)))
       (pox-delegate-stack-stx-amount user amount-ustx context)))
 
 
