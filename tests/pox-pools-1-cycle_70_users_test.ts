@@ -38,7 +38,7 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const faucet = accounts.get("faucet")!;
     const wallet_1 = accounts.get("wallet_1")!;
-    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
+    const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
     const amountUstx = 1_000_000;
 
     const users = generateWallets(70);
@@ -53,15 +53,15 @@ Clarinet.test({
     // allow contract caller
     block = chain.mineBlock(
       users.map((user) =>
-        allowContractCaller(poxDelegationContract, undefined, user)
+        allowContractCaller(poxPools1CycleContract, undefined, user)
       )
     );
     block.receipts.map((r: any) => r.result.expectOk().expectBool(true));
 
     // allow contract caller pool operator and whale
     chain.mineBlock([
-      allowContractCaller(poxDelegationContract, undefined, deployer),
-      allowContractCaller(poxDelegationContract, undefined, wallet_1),
+      allowContractCaller(poxPools1CycleContract, undefined, deployer),
+      allowContractCaller(poxPools1CycleContract, undefined, wallet_1),
     ]);
 
     // delegate all users

@@ -14,7 +14,7 @@ import { StacksNetwork } from "@stacks/network";
 import {  Accounts } from "./constants";
 import {
   HelperContract,
-  FpDelegationContract,
+  poxPoolsSelfServiceContract,
 } from "./contracts";
 import { decodeBtcAddress } from "@stacks/stacking";
 import { toBytes } from "@stacks/common";
@@ -32,10 +32,10 @@ export async function broadcastDelegateStx({
   user: {stxAddress:string, secretKey: string};
 }) {
   let txOptions = {
-    contractAddress: FpDelegationContract.address,
-    contractName: FpDelegationContract.name,
-    functionName: FpDelegationContract.Functions.DelegateStx.name,
-    functionArgs: FpDelegationContract.Functions.DelegateStx.args({
+    contractAddress: poxPoolsSelfServiceContract.address,
+    contractName: poxPoolsSelfServiceContract.name,
+    functionName: poxPoolsSelfServiceContract.Functions.DelegateStx.name,
+    functionArgs: poxPoolsSelfServiceContract.Functions.DelegateStx.args({
       amountUstx: uintCV(amountUstx),
     }),
     nonce,
@@ -61,10 +61,10 @@ export async function broadcastDelegateStackStx({
   network: StacksNetwork;
 }) {
   let txOptions = {
-    contractAddress: FpDelegationContract.address,
-    contractName: FpDelegationContract.name,
-    functionName: FpDelegationContract.Functions.DelegateStackStx.name,
-    functionArgs: FpDelegationContract.Functions.DelegateStackStx.args({
+    contractAddress: poxPoolsSelfServiceContract.address,
+    contractName: poxPoolsSelfServiceContract.name,
+    functionName: poxPoolsSelfServiceContract.Functions.DelegateStackStx.name,
+    functionArgs: poxPoolsSelfServiceContract.Functions.DelegateStackStx.args({
       user: principalCV(stacker.stxAddress),
       amountUstx: uintCV(amountUstx),
     }),

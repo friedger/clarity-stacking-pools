@@ -21,24 +21,7 @@ import {
   DevnetNetworkOrchestrator,
   StacksBlockMetadata,
 } from "@hirosystems/stacks-devnet-js";
-import { decodeBtcAddress } from "@stacks/stacking";
-import { toBytes } from "@stacks/common";
 
-import { HelperContract, PoxDelegationContract } from "./contracts";
-import {
-  AnchorMode,
-  broadcastTransaction,
-  bufferCV,
-  ClarityValue,
-  listCV,
-  makeContractCall,
-  noneCV,
-  PostConditionMode,
-  principalCV,
-  standardPrincipalCV,
-  tupleCV,
-  uintCV,
-} from "@stacks/transactions";
 import { broadcastAllowContractCallerContracCall } from "./allowContractCaller";
 import { afterAll, beforeAll, describe, it } from "vitest";
 import { broadcastDelegateStackStx, broadcastDelegateStx } from "./helper-fp";

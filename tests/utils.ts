@@ -15,7 +15,7 @@ export function expectPartialStackedByCycle(
   const result = getPartialStackedByCycle(
     poxAddr,
     cycle,
-    `${deployer.address}.fp-delegation`,
+    `${deployer.address}.pox-pool-self-service`,
     chain,
     deployer
   ).result;

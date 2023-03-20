@@ -9,9 +9,9 @@
   (ok (print (contract-call? .pox-pools-1-cycle get-stx-account user))))
 
 (define-public (get-reward-set (reward-cycle uint))
-  (ok (print (contract-call? .fp-delegation get-reward-set reward-cycle))))
+  (ok (print (contract-call? .pox-pool-self-service get-reward-set reward-cycle))))
 
 ;; call wrapper contract from a contract
 ;; requires allowance
 (define-public (delegate-stx (amount-ustx uint))
-  (contract-call? .fp-delegation delegate-stx amount-ustx))
+  (contract-call? .pox-pool-self-service delegate-stx amount-ustx))

@@ -3,9 +3,9 @@
 
 import { ClarityValue, BooleanCV, IntCV, UIntCV, BufferCV, OptionalCV, ResponseCV, PrincipalCV, ListCV, TupleCV, StringAsciiCV, StringUtf8CV, NoneCV, StandardPrincipalCV } from "@stacks/transactions"
 
-export namespace FpDelegationContract {
+export namespace poxPoolsSelfServiceContract {
     export const address = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
-    export const name = "fp-delegation";
+    export const name = "pox-pool-self-service";
 
     // Functions
     export namespace Functions {
@@ -103,7 +103,7 @@ export namespace HelperContract {
     }
 }
 
-export namespace PoxDelegationContract {
+export namespace poxPools1CycleContract {
     export const address = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
     export const name = "pox-pools-1-cycle";
 

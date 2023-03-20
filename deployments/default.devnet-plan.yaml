@@ -9,10 +9,10 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: fp-delegation
+            contract-name: pox-pool-self-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 151780
-            path: contracts/fp-delegation.clar
+            path: contracts/pox-pool-self-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:

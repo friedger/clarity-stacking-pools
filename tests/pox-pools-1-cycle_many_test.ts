@@ -29,13 +29,13 @@ function delegateAndDelegateStx(
   let wallet_2 = accounts.get("wallet_2")!;
   let pool_1 = accounts.get("wallet_7")!;
   let pool_2 = accounts.get("wallet_8")!;
-  const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
+  const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
   let block = chain.mineBlock([
-    allowContractCaller(poxDelegationContract, undefined, wallet_1),
-    allowContractCaller(poxDelegationContract, undefined, wallet_2),
-    allowContractCaller(poxDelegationContract, undefined, pool_1),
-    allowContractCaller(poxDelegationContract, undefined, pool_2),
+    allowContractCaller(poxPools1CycleContract, undefined, wallet_1),
+    allowContractCaller(poxPools1CycleContract, undefined, wallet_2),
+    allowContractCaller(poxPools1CycleContract, undefined, pool_1),
+    allowContractCaller(poxPools1CycleContract, undefined, pool_2),
 
     delegateStx(
       10_000_000_000_000,

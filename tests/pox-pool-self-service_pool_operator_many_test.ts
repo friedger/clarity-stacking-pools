@@ -3,11 +3,10 @@ import {
   delegateStx,
   delegateStackStx,
   delegateStackStxMany,
-} from "./client/fp-delegation-client.ts";
+} from "./client/pox-pool-self-service-client.ts";
 import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import { expectPartialStackedByCycle } from "./utils.ts";
 import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
-import { poxDelegationAllowContractCaller } from "./client/pox-pools-1-cycle-client.ts";
 import { expectTotalStackedByCycle } from "./utils.ts";
 
 Clarinet.test({
@@ -16,11 +15,11 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const fpDelegationContract = deployer.address + ".fp-delegation";
+    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
-      allowContractCaller(fpDelegationContract, undefined, wallet_1),
-      allowContractCaller(fpDelegationContract, undefined, wallet_2),
+      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
+      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_2),
 
       delegateStx(20_000_000_000_000, wallet_1),
       delegateStx(2_000_000, wallet_2),
@@ -44,13 +43,13 @@ Clarinet.test({
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
 
-    const fpDelegationContract = deployer.address + ".fp-delegation";
+    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
     // current cycle is cycle 0
 
     // delegate 2 stx for cycle 1
     let block = chain.mineBlock([
-      allowContractCaller(fpDelegationContract, undefined, wallet_1),
-      allowContractCaller(fpDelegationContract, undefined, wallet_2),
+      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
+      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_2),
       delegateStx(20_000_000, wallet_1),
       delegateStx(20_000_000, wallet_2),
     ]);
@@ -93,10 +92,10 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const fpDelegationContract = deployer.address + ".fp-delegation";
+    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
-      allowContractCaller(fpDelegationContract, undefined, wallet_1),
+      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
       delegateStx(2_000_000, wallet_1),
     ]);
 

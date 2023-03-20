@@ -22,10 +22,10 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
-    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
+    const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
-      allowContractCaller(poxDelegationContract, undefined, wallet_1),
+      allowContractCaller(poxPools1CycleContract, undefined, wallet_1),
       delegateStx(
         1_000_000,
         deployer.address,
@@ -70,10 +70,10 @@ Clarinet.test({
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
     let wallet_2 = accounts.get("wallet_2")!;
-    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
+    const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
-      allowContractCaller(poxDelegationContract, undefined, wallet_1),
+      allowContractCaller(poxPools1CycleContract, undefined, wallet_1),
 
       delegateStx(
         1_000_000_000,
@@ -118,10 +118,10 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
-    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
+    const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
-      allowContractCaller(poxDelegationContract, undefined, deployer),
+      allowContractCaller(poxPools1CycleContract, undefined, deployer),
 
       delegateStackStx(
         [

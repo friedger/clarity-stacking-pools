@@ -25,7 +25,7 @@ Clarinet.test({
     let wallet_2 = accounts.get("wallet_2")!;
     let pool_1 = accounts.get("deployer")!;
     let pool_2 = accounts.get("wallet_8")!;
-    const poxDelegationContract = pool_1.address + ".pox-pools-1-cycle";
+    const poxPools1CycleContract = pool_1.address + ".pox-pools-1-cycle";
 
     // info before delegation
     let response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
@@ -35,9 +35,9 @@ Clarinet.test({
     response.result.expectNone();
 
     let block = chain.mineBlock([
-      allowContractCaller(poxDelegationContract, undefined, wallet_1),
-      allowContractCaller(poxDelegationContract, undefined, wallet_2),
-      allowContractCaller(poxDelegationContract, undefined, pool_1),
+      allowContractCaller(poxPools1CycleContract, undefined, wallet_1),
+      allowContractCaller(poxPools1CycleContract, undefined, wallet_2),
+      allowContractCaller(poxPools1CycleContract, undefined, pool_1),
 
       delegateStx(
         100_000_000,

@@ -1,4 +1,7 @@
-;; FAST Pool - Self-service non-custodial stacking pool
+;; @contract Pox-2 Self-Service Pool
+;; @version 1
+
+;; Self-service non-custodial stacking pool
 ;; The pool locks for 1 cycle, amount can be increased at each cycle.
 ;; Users trust the reward admin that they will receive their share of rewards.
 ;; Reward admin can be a contract as well.
@@ -39,7 +42,7 @@
 (map-set reward-admins tx-sender true)
 
 (define-data-var active bool true)
-(define-data-var fp-pox-address {hashbytes: (buff 32), version: (buff 1)}
+(define-data-var pool-pox-address {hashbytes: (buff 32), version: (buff 1)}
   {version: 0x00,
    hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce})
 (define-data-var stx-buffer uint u1000000) ;; 1 STX
@@ -118,7 +121,7 @@
 ;; If user already stacked then extend and increase
 (define-private (lock-delegated-stx (user principal))
   (let ((start-burn-ht (+ burn-block-height u1))
-        (pox-address (var-get fp-pox-address))
+        (pox-address (var-get pool-pox-address))
         ;; delegate the minimum of the delegated amount and stx balance (including locked stx)
         (buffer-amount (var-get stx-buffer))
         (user-account (stx-account user))
@@ -170,12 +173,12 @@
             ;; Total stacked already reached minimum.
             ;; Call stack-aggregate-increase.
             ;; It might fail because called in the same cycle twice.
-      index (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-increase (var-get fp-pox-address) reward-cycle index))
+      index (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-increase (var-get pool-pox-address) reward-cycle index))
               success (map-set last-aggregation reward-cycle block-height)
               error (begin (print {err-increase-ignored: error}) false))
             ;; Total stacked is still below minimum.
             ;; Just try to commit, it might fail because minimum not yet met
-      (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-commit-indexed (var-get fp-pox-address) reward-cycle))
+      (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-commit-indexed (var-get pool-pox-address) reward-cycle))
         index (begin
                 (map-set pox-addr-indices reward-cycle index)
                 (map-set last-aggregation reward-cycle block-height))
@@ -190,10 +193,10 @@
     (asserts! (default-to false (map-get? reward-admins contract-caller)) err-unauthorized)
     (ok (var-set active is-active))))
 
-(define-public (set-fp-pox-address (pox-addr {hashbytes: (buff 32), version: (buff 1)}))
+(define-public (set-pool-pox-address (pox-addr {hashbytes: (buff 32), version: (buff 1)}))
   (begin
     (asserts! (default-to false (map-get? reward-admins contract-caller)) err-unauthorized)
-    (ok (var-set fp-pox-address pox-addr))))
+    (ok (var-set pool-pox-address pox-addr))))
 
 (define-public (set-stx-buffer (amount-ustx uint))
   (begin
@@ -239,8 +242,8 @@
 (define-read-only (is-admin-enabled (admin principal))
   (map-get? reward-admins admin))
 
-(define-read-only (get-fp-pox-address)
-  (var-get fp-pox-address))
+(define-read-only (get-pool-pox-address)
+  (var-get pool-pox-address))
 
 (define-read-only (can-lock-now (cycle uint))
   (> burn-block-height (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 reward-cycle-to-burn-height cycle) half-cycle-length)))
