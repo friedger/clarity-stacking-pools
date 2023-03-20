@@ -38,36 +38,6 @@
     { sender: principal, contract-caller: principal }
     { until-burn-ht: (optional uint) })
 
-;; Get stacker info
-(define-private (pox-get-stacker-info (user principal))
-   (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
-
-;; Get currently delegated amount
-(define-read-only (get-delegated-amount (user principal))
-  (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
-
-;; Revoke and delegate stx
-(define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
-  (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
-    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
-      success (ok success)
-      error (err (* u1000 (to-uint error))))))
-
-;;
-;; Helper functions
-;;
-
-;; Returns minimum
-(define-private (min (amount-1 uint) (amount-2 uint))
-  (if (< amount-1 amount-2)
-    amount-1
-    amount-2))
-
-;; Returns maximum
-(define-private (max (amount-1 uint) (amount-2 uint))
-  (if (> amount-1 amount-2)
-    amount-1
-    amount-2))
 ;;
 ;; Helper functions for "grouped-stackers" map
 ;;
@@ -85,11 +55,6 @@
     (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle} index)))
 
 
-;; Get the number of lists of stackers that have locked their stx for the given pool and cycle.
-(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint))
-  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle}))
-)
-
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint}))
   (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
         (last-index (get-status-lists-last-index pool reward-cycle))
@@ -100,6 +65,27 @@
                 (insert-in-new-list pool reward-cycle last-index details))
         (map-insert grouped-stackers stacker-key (list details)))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle} (+ (get-total pool reward-cycle) (get lock-amount details)))))
+
+;;
+;; Helper functions for pox-2 calls
+;;
+
+;; Get stacker info
+(define-private (pox-get-stacker-info (user principal))
+   (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
+
+;; Revoke and delegate stx
+(define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
+  (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
+    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
+      success (ok success)
+      error (err (* u1000 (to-uint error))))))
+
+;; Returns minimum
+(define-private (min (amount-1 uint) (amount-2 uint))
+  (if (< amount-1 amount-2)
+    amount-1
+    amount-2))
 
 ;; Delegate-stack-extend and delegate-stack-increase as necessary.
 ;; Parameter amount-ustx must be lower or equal the stx balance and the delegated amount
@@ -227,6 +213,53 @@
         (fold pox-delegate-stack-stx-simple users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
       (err u1))) ;; defines uint as error type
 
+
+;;
+;; Read-only functions
+;;
+
+;; Returns the user's stacking details from pox contract,
+;; the user's delegation details from "user-data" and the
+;; total locked stacks for the given pool and user's stacking parameters.
+;; Note, that user can stack with a different pool, results need to verify stacker-info.pox-addr
+(define-read-only (get-status (pool principal) (user principal))
+  (let ((stacker-info (unwrap! (pox-get-stacker-info user) err-no-stacker-info)))
+      (ok {stacker-info: stacker-info,
+           user-info: (unwrap! (map-get? user-data user) err-no-user-info),
+           total: (get-total pool (get first-reward-cycle stacker-info))})))
+
+;; Returns the number of lists of stackers that have locked their stx for the given pool and cycle.
+(define-read-only (get-status-lists-last-index (pool principal) (reward-cycle uint))
+  (default-to u0 (map-get? grouped-stackers-len {pool: pool, reward-cycle: reward-cycle}))
+)
+
+;; Returns a list of stackers that have locked their stx for the given pool and cycle.
+;; index: must be smaller than get-status-lists-last-index
+(define-read-only (get-status-list (pool principal) (reward-cycle uint) (index uint))
+  {total: (get-total pool reward-cycle),
+  status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, index: index})}
+)
+
+;; Returns currently delegated amount
+(define-read-only (get-delegated-amount (user principal))
+  (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
+
+;; Returns information about last delegation call for a given user
+;; This information can be obsolete due to a normal revoke call
+(define-read-only (get-user-data (user principal))
+  (map-get? user-data user))
+
+;; Returns locked and unlocked amount for given user
+(define-read-only (get-stx-account (user principal))
+  (stx-account user))
+
+;; Returns total stacks locked by given pool, reward-cycle.
+;; The total for a given reward cycle needs to be calculated off-chain
+;; depending on the pool's policy.
+(define-read-only (get-total (pool principal) (reward-cycle uint))
+  (default-to u0 (map-get? grouped-totals {pool: pool, reward-cycle: reward-cycle}))
+)
+
 ;;
 ;; Functions about allowance of delegation/stacking contract calls
 ;;
@@ -268,41 +301,4 @@
 ;; Returns none if there is no allowance record
 (define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
     (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
-)
-
-;;
-;; Read-only functions
-;;
-
-;; Returns the user's stacking details from pox contract,
-;; the user's delegation details from "user-data" and the
-;; total locked stacks for the given pool and user's stacking parameters.
-;; Note, that user can stack with a different pool, results need to verify stacker-info.pox-addr
-(define-read-only (get-status (pool principal) (user principal))
-  (let ((stacker-info (unwrap! (pox-get-stacker-info user) err-no-stacker-info)))
-      (ok {stacker-info: stacker-info,
-           user-info: (unwrap! (map-get? user-data user) err-no-user-info),
-           total: (get-total pool (get first-reward-cycle stacker-info))})))
-
-;; Get a list of stackers that have locked their stx for the given pool and cycle.
-;; index: must be smaller than get-status-lists-last-index
-(define-read-only (get-status-list (pool principal) (reward-cycle uint) (index uint))
-  {total: (get-total pool reward-cycle),
-  status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, index: index})}
-)
-
-;; Get information about last delegation call for a given user
-;; This information can be obsolete due to a normal revoke call
-(define-read-only (get-user-data (user principal))
-  (map-get? user-data user))
-
-;; Get locked and unlocked amount for given user
-(define-read-only (get-stx-account (user principal))
-  (stx-account user))
-
-;; Get total stacks locked by given pool, reward-cycle.
-;; The total for a given reward cycle needs to be calculated off-chain
-;; depending on the pool's policy.
-(define-read-only (get-total (pool principal) (reward-cycle uint))
-  (default-to u0 (map-get? grouped-totals {pool: pool, reward-cycle: reward-cycle}))
 )
