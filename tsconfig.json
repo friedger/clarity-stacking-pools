@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "module": "commonjs",
@@ -9,7 +8,8 @@
     "strict": true,
     "strictNullChecks": true,
     "sourceMap": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["vitest/globals"]
   },
   "include": [
     "tests"
