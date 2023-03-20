@@ -43,8 +43,8 @@
 
 (define-data-var active bool true)
 (define-data-var pool-pox-address {hashbytes: (buff 32), version: (buff 1)}
-  {version: 0x00,
-   hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce})
+  {version: 0x04,
+   hashbytes: 0x83ed66860315e334010bbfb76eb3eef887efee0a})
 (define-data-var stx-buffer uint u1000000) ;; 1 STX
 
 ;; Half cycle lenght is 1050 for mainnet
@@ -248,29 +248,11 @@
 (define-read-only (can-lock-now (cycle uint))
   (> burn-block-height (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 reward-cycle-to-burn-height cycle) half-cycle-length)))
 
-(define-read-only (get-first-result (results (response (list 30 (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} uint)) uint)))
-  (unwrap-panic (element-at (unwrap-panic results) u0)))
-
-;; Converts response of type (response tuple int) to (response tuple uint)
-(define-read-only (as-tuple-response-with-uint (result (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} int)))
-  (match result success (ok success) error (err (to-uint error))))
-
-;; Converts response of type (response bool int) to (response bool uint)
-(define-read-only (as-bool-response-with-uint (result (response bool int)))
-  (match result success (ok success) error (err (to-uint error))))
-
 ;; Returns minimum
 (define-private (min (amount-1 uint) (amount-2 uint))
   (if (< amount-1 amount-2)
     amount-1
     amount-2))
-
-;; Returns maximum
-(define-private (max (amount-1 uint) (amount-2 uint))
-  (if (> amount-1 amount-2)
-    amount-1
-    amount-2))
-
 ;;
 ;; Functions about allowance of delegation/stacking contract calls
 ;;
