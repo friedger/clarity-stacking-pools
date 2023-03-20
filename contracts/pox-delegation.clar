@@ -18,6 +18,11 @@
 ;; Error code 9 is used by pox-2 contract for stacking-permission-denied
 (define-constant err-stacking-permission-denied (err u609))
 
+;; Allowed contract-callers handling a user's stacking activity.
+(define-map allowance-contract-callers
+    { sender: principal, contract-caller: principal }
+    { until-burn-ht: (optional uint) })
+
 ;; Keep track of the last delegation
 ;; pox-addr: raw bytes of user's account to receive rewards, can be encoded as btc or stx address
 ;; cycle: cycle id of time of delegation
@@ -32,11 +37,6 @@
 
 ;; Keep track of total stxs stacked grouped by pool and reward-cycle id
 (define-map grouped-totals {pool: principal, reward-cycle: uint} uint)
-
-;; Allowed contract-callers
-(define-map allowance-contract-callers
-    { sender: principal, contract-caller: principal }
-    { until-burn-ht: (optional uint) })
 
 ;;
 ;; Helper functions for "grouped-stackers" map
@@ -111,7 +111,7 @@
 
 ;; Stacks given amount of delegated stx tokens.
 ;; Stores the result in "grouped-stackers".
-(define-private (pox-delegate-stack-stx (details {user: principal, amount-ustx: uint})
+(define-private (delegate-stack-stx-fold (details {user: principal, amount-ustx: uint})
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
                       (start-burn-ht uint)
@@ -123,7 +123,7 @@
 
 ;; Stacks maximal amount of delegated stx tokens.
 ;; Stores the result in "grouped-stackers".
-(define-private (pox-delegate-stack-stx-simple (user principal)
+(define-private (delegate-stack-stx-simple-fold (user principal)
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
                       (start-burn-ht uint)
@@ -143,30 +143,30 @@
   (let ((pox-address (get pox-address context))
         (start-burn-ht (get start-burn-ht context))
         (stack-result
-          ;; call delegate-stack-stx
           (if (> amount-ustx u0)
             (match (map-get? user-data user)
-              user-details (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
+              user-details
+                  ;; Call delegate-stack-stx
+                  ;; On failure, call delegate-stack-extend and increase
+                  (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
                               user amount-ustx
                               pox-address start-burn-ht u1)
                       stacker-details  (begin
-                              ;; store result on success
+                              ;; Store result on success
                               (map-set-details tx-sender (merge-details stacker-details user-details))
                               (ok stacker-details))
-                      error (if (is-eq error 3) ;; check whether user is already stacked
+                      error (if (is-eq error 3) ;; Check whether user is already stacked
                               (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht)
                               (err (* u1000 (to-uint error)))))
             err-not-found)
           err-non-positive-amount)))
-        ;; return a tuple even if delegate-stack-stx call failed
+        ;; Return a tuple even if delegate-stack-stx call failed
         {pox-address: pox-address,
           start-burn-ht: start-burn-ht,
           result: (unwrap-panic (as-max-len? (append (get result context) stack-result) u30))}))
-
 ;;
 ;; Public function
 ;;
-
 
 ;; @desc User calls this function to delegate the stacking rights to a pool.
 ;; Users can revoke delegation and stx tokens will unlock at the end of the locking period.
@@ -195,10 +195,10 @@
                                       (amount-ustx uint))))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint))
-    (if true
-      (ok (get result
-        (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
-      (err u1))) ;; defines uint as error type
+  (begin
+    (asserts! (check-caller-allowed) err-stacking-permission-denied)
+    (ok (get result
+      (fold delegate-stack-stx-fold users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))))
 
 ;; @desc Pool admins call this function to lock stacks of their pool members in batches for a lock period of 1 cycle.
 ;; The locking amount is determined from the delegated amount and the users balances.
@@ -208,12 +208,10 @@
 (define-public (delegate-stack-stx-simple (users (list 30 principal))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint))
-    (if true
+  (begin
+    (asserts! (check-caller-allowed) err-stacking-permission-denied)
       (ok (get result
-        (fold pox-delegate-stack-stx-simple users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
-      (err u1))) ;; defines uint as error type
-
-
+        (fold delegate-stack-stx-simple-fold users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))))
 ;;
 ;; Read-only functions
 ;;
@@ -275,12 +273,13 @@
                { sender: tx-sender, contract-caller: caller }
                { until-burn-ht: until-burn-ht }))))
 
-;; Revoke contract-caller authorization to call stacking methods
+;; Revokes contract-caller authorization to call stacking methods
 (define-public (disallow-contract-caller (caller principal))
   (begin
     (asserts! (is-eq tx-sender contract-caller) err-stacking-permission-denied)
     (ok (map-delete allowance-contract-callers { sender: tx-sender, contract-caller: caller }))))
 
+;; Verifies that the contract caller has allowance to handle the tx-sender's stacking
 (define-read-only (check-caller-allowed)
     (or (is-eq tx-sender contract-caller)
         (let ((caller-allowed
@@ -295,10 +294,10 @@
           (< burn-block-height expires-at))))
 
 
-;; Get the burn height at which a particular contract is allowed to stack for a particular principal.
-;; Returns (some (some X)) if X is the burn height at which the allowance terminates
-;; Returns (some none) if the caller is allowed indefinitely
-;; Returns none if there is no allowance record
+;; Returns the burn height at which a particular contract is allowed to stack for a particular principal.
+;; The result is (some (some X)) if X is the burn height at which the allowance terminates.
+;; The result is (some none) if the caller is allowed indefinitely.
+;; The result is none if there is no allowance record.
 (define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
     (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
 )
