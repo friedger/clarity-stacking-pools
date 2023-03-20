@@ -40,8 +40,8 @@
 
 (define-data-var active bool true)
 (define-data-var fp-pox-address {hashbytes: (buff 32), version: (buff 1)}
-    {version: 0x00,
-     hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce})
+  {version: 0x00,
+   hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce})
 (define-data-var stx-buffer uint u1000000) ;; 1 STX
 
 ;; Half cycle lenght is 1050 for mainnet
@@ -56,8 +56,8 @@
 (define-constant err-stacking-permission-denied (err u609))
 ;; Allowed contract-callers handling a user's stacking activity.
 (define-map allowance-contract-callers
-    { sender: principal, contract-caller: principal }
-    { until-burn-ht: (optional uint) })
+  { sender: principal, contract-caller: principal}
+  { until-burn-ht: (optional uint)})
 
 ;;
 ;; Public functions
@@ -97,8 +97,8 @@
     (let ((locking-result
             (as-contract (fold lock-delegated-stx-fold users (list)))))
     ;; Do 4.
-    (maybe-stack-aggregation-commit current-cycle)
-    (ok locking-result))))
+      (maybe-stack-aggregation-commit current-cycle)
+      (ok locking-result))))
 
 ;;
 ;; Private function for pooled stacking
@@ -108,7 +108,7 @@
 (define-private (delegate-stx-inner (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
   (let ((result-revoke
             ;; Calls revoke and ignores result
-            (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
+          (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
     ;; Calls delegate-stx, converts any error to uint
     (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
       success (ok success)
@@ -126,38 +126,37 @@
         (amount-ustx (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount)))
     (asserts! (var-get active) err-pox-address-deactivated)
     (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
-                                user amount-ustx
-                                pox-address start-burn-ht u1)
+             user amount-ustx
+             pox-address start-burn-ht u1)
       stacker-details  (ok stacker-details)
       error (if (is-eq error 3) ;; check whether user is already stacked
               (delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht)
               (err (* u1000 (to-uint error)))))))
 
-(define-private (lock-delegated-stx-fold (user principal) (result (list 30 (response {lock-amount:uint, stacker: principal, unlock-burn-height: uint} uint))))
+(define-private (lock-delegated-stx-fold (user principal) (result (list 30 (response {lock-amount: uint, stacker: principal, unlock-burn-height: uint} uint))))
   (let ((stack-result (lock-delegated-stx user)))
     (unwrap-panic (as-max-len? (append result stack-result) u30))))
-
 
 ;; Calls pox-2 delegate-stack-extend and delegate-stack-increase.
 ;; parameter amount-ustx must be lower or equal the stx balance and the delegated amount
 (define-private (delegate-stack-extend-increase (user principal)
-                    (amount-ustx uint)
-                    (pox-address {hashbytes: (buff 32), version: (buff 1)})
-                    (start-burn-ht uint))
+                  (amount-ustx uint)
+                  (pox-address {hashbytes: (buff 32), version: (buff 1)})
+                  (start-burn-ht uint))
   (let ((status (stx-account user)))
     (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
     (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
-                                  user pox-address u1)
+             user pox-address u1)
       success (if (> amount-ustx (get locked status))
                 (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
-                              user pox-address (- amount-ustx (get locked status)))
-                    success-increase (ok {lock-amount: (get total-locked success-increase),
-                                          stacker: user,
-                                          unlock-burn-height: (get unlock-burn-height success)})
-                    error-increase (err (* u1000000000 (to-uint error-increase))))
-              (ok {lock-amount: (get locked status),
-                   stacker: user,
-                   unlock-burn-height: (get unlock-burn-height success)}))
+                         user pox-address (- amount-ustx (get locked status)))
+                  success-increase (ok {lock-amount: (get total-locked success-increase),
+                                        stacker: user,
+                                        unlock-burn-height: (get unlock-burn-height success)})
+                  error-increase (err (* u1000000000 (to-uint error-increase))))
+                (ok {lock-amount: (get locked status),
+                     stacker: user,
+                     unlock-burn-height: (get unlock-burn-height success)}))
       error (err (* u1000000 (to-uint error))))))
 
 ;; Tries to calls stack aggregation commit. If the minimum is met,
@@ -171,17 +170,16 @@
             ;; Total stacked already reached minimum.
             ;; Call stack-aggregate-increase.
             ;; It might fail because called in the same cycle twice.
-            index (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-increase (var-get fp-pox-address) reward-cycle index))
-                    success (map-set last-aggregation reward-cycle block-height)
-                    error (begin (print {err-increase-ignored: error}) false))
+      index (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-increase (var-get fp-pox-address) reward-cycle index))
+              success (map-set last-aggregation reward-cycle block-height)
+              error (begin (print {err-increase-ignored: error}) false))
             ;; Total stacked is still below minimum.
             ;; Just try to commit, it might fail because minimum not yet met
-            (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-commit-indexed (var-get fp-pox-address) reward-cycle))
-              index (begin
-                      (map-set pox-addr-indices reward-cycle index)
-                      (map-set last-aggregation reward-cycle block-height))
-              error (begin (print {err-commit-ignored: error}) false))))) ;; ignore errors
-
+      (match (as-contract (contract-call? 'SP000000000000000000002Q6VF78.pox-2 stack-aggregation-commit-indexed (var-get fp-pox-address) reward-cycle))
+        index (begin
+                (map-set pox-addr-indices reward-cycle index)
+                (map-set last-aggregation reward-cycle block-height))
+        error (begin (print {err-commit-ignored: error}) false))))) ;; ignore errors
 
 ;;
 ;; Admin functions
@@ -224,10 +222,10 @@
     none))
 
 (define-read-only (get-reward-set-at-block (reward-cycle uint) (stacks-height uint))
-   (at-block (unwrap! (get-block-info? id-header-hash stacks-height) none)
-      (match (print (map-get? pox-addr-indices reward-cycle))
-        index (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-reward-set-pox-address reward-cycle index)
-        none)))
+  (at-block (unwrap! (get-block-info? id-header-hash stacks-height) none)
+    (match (print (map-get? pox-addr-indices reward-cycle))
+      index (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-reward-set-pox-address reward-cycle index)
+      none)))
 
 (define-read-only (get-delegated-amount (user principal))
   (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
@@ -282,33 +280,31 @@
   (begin
     (asserts! (is-eq tx-sender contract-caller) err-stacking-permission-denied)
     (ok (map-set allowance-contract-callers
-               { sender: tx-sender, contract-caller: caller }
-               { until-burn-ht: until-burn-ht }))))
+          { sender: tx-sender, contract-caller: caller}
+          { until-burn-ht: until-burn-ht}))))
 
 ;; Revoke contract-caller authorization to call stacking methods
 (define-public (disallow-contract-caller (caller principal))
   (begin
     (asserts! (is-eq tx-sender contract-caller) err-stacking-permission-denied)
-    (ok (map-delete allowance-contract-callers { sender: tx-sender, contract-caller: caller }))))
+    (ok (map-delete allowance-contract-callers { sender: tx-sender, contract-caller: caller}))))
 
 (define-read-only (check-caller-allowed)
-    (or (is-eq tx-sender contract-caller)
-        (let ((caller-allowed
+  (or (is-eq tx-sender contract-caller)
+    (let ((caller-allowed
                  ;; if not in the caller map, return false
-                 (unwrap! (map-get? allowance-contract-callers
-                                    { sender: tx-sender, contract-caller: contract-caller })
-                          false))
-               (expires-at
-                 ;; if until-burn-ht not set, then return true (because no expiry)
-                 (unwrap! (get until-burn-ht caller-allowed) true)))
+            (unwrap! (map-get? allowance-contract-callers
+                       { sender: tx-sender, contract-caller: contract-caller})
+              false))
+          (expires-at
+                ;; if until-burn-ht not set, then return true (because no expiry)
+            (unwrap! (get until-burn-ht caller-allowed) true)))
           ;; is the caller allowance still valid
-          (< burn-block-height expires-at))))
-
+      (< burn-block-height expires-at))))
 
 ;; Returns the burn height at which a particular contract is allowed to stack for a particular principal.
 ;; The result is (some (some X)) if X is the burn height at which the allowance terminates.
 ;; The result is (some none) if the caller is allowed indefinitely.
 ;; The result is none if there is no allowance record.
 (define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
-    (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
-)
+  (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract}))
