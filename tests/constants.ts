@@ -20,8 +20,8 @@ export const poxAddrPool2 = {
 
 // as defined in pox-pool-self-service.clar
 export const poxAddrFP = {
-  version: "0x00",
-  hashbytes: "0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce",
+  version: "0x04",
+  hashbytes: "0x83ed66860315e334010bbfb76eb3eef887efee0a",
 };
 
 export const Errors = {
