@@ -1,16 +1,24 @@
-(define-trait pool-trait-ext ((delegate-stx (uint principal (optional uint)
-              (optional (tuple (hashbytes (buff 32)) (version (buff 1))))
-              (tuple (hashbytes (buff 32)) (version (buff 1)))
-              uint) (response bool int))))
+;; @contract PoX-2 wrapper contract for stacking pools
+;; @version 1
 
+;; User calls delegate-stx at first and provide a btc address to receive rewards.
+;; Pool operators lock the user's delegated STX tokens according to their rules.
+;; Some pools require a minimum amount. Most pool operators lock the delegated STX
+;; for the next cycle only.
+;; Users can delegate more stx by calling delegate-stx with a higher amount for the next cycle.
+
+;;
+;; Data storage
+;;
 (define-constant err-not-found (err u404))
 (define-constant err-non-positive-amount (err u500))
 (define-constant err-no-stacker-info (err u501))
 (define-constant err-no-user-info (err u502))
 (define-constant err-decrease-forbidden (err u503))
+;; Error code 9 is used by pox-2 contract for stacking-permission-denied
 (define-constant err-stacking-permission-denied (err u609))
 
-;; keep track of the last delegation
+;; Keep track of the last delegation
 ;; pox-addr: raw bytes of user's account to receive rewards, can be encoded as btc or stx address
 ;; cycle: cycle id of time of delegation
 (define-map user-data principal {pox-addr: (tuple (hashbytes (buff 32)) (version (buff 1))), cycle: uint})
@@ -25,7 +33,7 @@
 ;; Keep track of total stxs stacked grouped by pool and reward-cycle id
 (define-map grouped-totals {pool: principal, reward-cycle: uint} uint)
 
-;; allowed contract-callers
+;; Allowed contract-callers
 (define-map allowance-contract-callers
     { sender: principal, contract-caller: principal }
     { until-burn-ht: (optional uint) })
@@ -34,7 +42,7 @@
 (define-private (pox-get-stacker-info (user principal))
    (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
 
-
+;; Get currently delegated amount
 (define-read-only (get-delegated-amount (user principal))
   (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
 
@@ -93,8 +101,8 @@
         (map-insert grouped-stackers stacker-key (list details)))
       (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle} (+ (get-total pool reward-cycle) (get lock-amount details)))))
 
-;; calls pox-2 delegate-stack-extend and delegate-stack-increase.
-;; parameter amount-ustx must be lower or equal the stx balance and the delegated amount
+;; Delegate-stack-extend and delegate-stack-increase as necessary.
+;; Parameter amount-ustx must be lower or equal the stx balance and the delegated amount
 (define-private (pox-delegate-stack-extend-increase (user principal)
                     (amount-ustx uint)
                     (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
@@ -115,7 +123,7 @@
                    unlock-burn-height: (get unlock-burn-height success)}))
       error (err (* u1000000 (to-uint error))))))
 
-;; Genesis delegate-stack-stx call.
+;; Stacks given amount of delegated stx tokens.
 ;; Stores the result in "grouped-stackers".
 (define-private (pox-delegate-stack-stx (details {user: principal, amount-ustx: uint})
                   (context (tuple
@@ -127,6 +135,8 @@
         (amount-ustx (min (get amount-ustx details) (+ (get locked user-account) (get unlocked user-account)))))
       (pox-delegate-stack-stx-amount user amount-ustx context)))
 
+;; Stacks maximal amount of delegated stx tokens.
+;; Stores the result in "grouped-stackers".
 (define-private (pox-delegate-stack-stx-simple (user principal)
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
@@ -138,7 +148,7 @@
         (amount-ustx (if (> allowed-amount buffer-amount) (- allowed-amount buffer-amount) allowed-amount)))
       (pox-delegate-stack-stx-amount user amount-ustx context)))
 
-
+;; Stacks the given amount of delegated stx tokens
 (define-private (pox-delegate-stack-stx-amount (user principal) (amount-ustx uint)
                   (context (tuple
                       (pox-address (tuple (hashbytes (buff 32)) (version (buff 1))))
@@ -171,20 +181,29 @@
 ;; Public function
 ;;
 
-;; Users call this function to delegate the stacking rights to a pool.
+
+;; @desc User calls this function to delegate the stacking rights to a pool.
+;; Users can revoke delegation and stx tokens will unlock at the end of the locking period.
 ;;
-;; user-pox-addr: raw bytes of user's address that should be used for payout of rewards by pool admins.
+;; @param amount-ustx; amount to delegate. Can be higher than current stx balance.
+;; @param delegate-to; the pool's Stacks address.
+;; @param until-burn-ht; optional maximal duration of the pool membership. Can be none for undetermined membership.
+;; @param pool-pox-addr; the optional pool's bitcoin reward address. Can be none, so that the pool operator can choose different addresses.
+;; @param user-pox-addr; raw bytes of user's address that should be used for payout of rewards by pool admins.
 (define-public (delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint))
               (pool-pox-addr (optional (tuple (hashbytes (buff 32)) (version (buff 1)))))
               (user-pox-addr (tuple (hashbytes (buff 32)) (version (buff 1)))))
   (begin
-    ;; must be called directly by the tx-sender or by an allowed contract-caller
+    ;; Must be called directly by the tx-sender or by an allowed contract-caller
     (asserts! (check-caller-allowed) err-stacking-permission-denied)
     (map-set user-data tx-sender
                 {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
-;; Pool admins call this function to lock stacks of their pool members in batches
+;; @desc Pool admins call this function to lock stacks of their pool members in batches for 1 cycle.
+;; @param users; list of users with amounts to lock.
+;; @param pox-address; the pool's bitcoin reward address.
+;; @param start-burn-ht; a future bitcoin height of the current cycle.
 (define-public (delegate-stack-stx (users (list 30 (tuple
                                       (user principal)
                                       (amount-ustx uint))))
@@ -195,7 +214,11 @@
         (fold pox-delegate-stack-stx users {start-burn-ht: start-burn-ht, pox-address: pox-address, result: (list)})))
       (err u1))) ;; defines uint as error type
 
-;; Pool admins call this function to lock stacks of their pool members in batches for a lock period of 1 cycle
+;; @desc Pool admins call this function to lock stacks of their pool members in batches for a lock period of 1 cycle.
+;; The locking amount is determined from the delegated amount and the users balances.
+;; @param users; list of current pool members.
+;; @param pox-address; the pool's bitcoin reward address.
+;; @param start-burn-ht; a future bitcoin height of the current cycle.
 (define-public (delegate-stack-stx-simple (users (list 30 principal))
                                     (pox-address { version: (buff 1), hashbytes: (buff 32) })
                                     (start-burn-ht uint))
@@ -273,6 +296,7 @@
 (define-read-only (get-user-data (user principal))
   (map-get? user-data user))
 
+;; Get locked and unlocked amount for given user
 (define-read-only (get-stx-account (user principal))
   (stx-account user))
 
