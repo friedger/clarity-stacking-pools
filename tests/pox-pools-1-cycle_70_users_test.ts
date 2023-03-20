@@ -3,7 +3,7 @@ import {
   delegateStackStx,
   delegateStx,
   getTotal
-} from "./client/pox-delegation-client.ts";
+} from "./client/pox-pools-1-cycle-client.ts";
 import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import { btcAddrWallet1 } from "./constants.ts";
 import {
@@ -38,7 +38,7 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const faucet = accounts.get("faucet")!;
     const wallet_1 = accounts.get("wallet_1")!;
-    const poxDelegationContract = deployer.address + ".pox-delegation";
+    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
     const amountUstx = 1_000_000;
 
     const users = generateWallets(70);

@@ -5,7 +5,7 @@ import {
 } from "./client/fp-delegation-client.ts";
 import { Clarinet, Chain, Account, Tx, types } from "./deps.ts";
 import { Errors, PoxErrors } from "./constants.ts";
-import { poxDelegationAllowContractCaller } from "./client/pox-delegation-client.ts";
+import { poxDelegationAllowContractCaller } from "./client/pox-pools-1-cycle-client.ts";
 import { expectTotalStackedByCycle } from "./utils.ts";
 
 Clarinet.test({

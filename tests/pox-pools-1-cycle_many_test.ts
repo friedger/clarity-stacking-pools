@@ -9,7 +9,7 @@ import {
   getStatusList,
   getStatusListsLastIndex,
   getStatus,
-} from "./client/pox-delegation-client.ts";
+} from "./client/pox-pools-1-cycle-client.ts";
 import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import {
   btcAddrWallet1,
@@ -29,7 +29,7 @@ function delegateAndDelegateStx(
   let wallet_2 = accounts.get("wallet_2")!;
   let pool_1 = accounts.get("wallet_7")!;
   let pool_2 = accounts.get("wallet_8")!;
-  const poxDelegationContract = deployer.address + ".pox-delegation";
+  const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
 
   let block = chain.mineBlock([
     allowContractCaller(poxDelegationContract, undefined, wallet_1),

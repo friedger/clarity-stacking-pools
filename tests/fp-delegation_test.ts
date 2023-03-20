@@ -6,7 +6,7 @@ import {
 import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import { expectPartialStackedByCycle } from "./utils.ts";
 import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
-import { poxDelegationAllowContractCaller } from "./client/pox-delegation-client.ts";
+import { poxDelegationAllowContractCaller } from "./client/pox-pools-1-cycle-client.ts";
 import { expectTotalStackedByCycle } from "./utils.ts";
 
 Clarinet.test({

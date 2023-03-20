@@ -11,7 +11,7 @@
     "node": ">=14"
   },
   "scripts": {
-    "genhtml": "genhtml coverage.lcov -o coverage-web",
+    "genhtml": "genhtml contracts/coverage.lcov -o coverage-web",
     "build": "tsc --build",
     "test:dev": "vitest"
   },

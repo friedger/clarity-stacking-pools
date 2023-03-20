@@ -3,10 +3,10 @@
 ;; Currently, it is not possible to use read-only functions in deployment plans.
 
 (define-public (get-user-data (user principal))
-  (ok (print (contract-call? .pox-delegation get-user-data user))))
+  (ok (print (contract-call? .pox-pools-1-cycle get-user-data user))))
 
 (define-public (get-stx-account (user principal))
-  (ok (print (contract-call? .pox-delegation get-stx-account user))))
+  (ok (print (contract-call? .pox-pools-1-cycle get-stx-account user))))
 
 (define-public (get-reward-set (reward-cycle uint))
   (ok (print (contract-call? .fp-delegation get-reward-set reward-cycle))))

@@ -7,7 +7,7 @@ import {
   delegateStx,
   getStatus,
   getUserData,
-} from "./client/pox-delegation-client.ts";
+} from "./client/pox-pools-1-cycle-client.ts";
 import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import {
   Errors,
@@ -25,7 +25,7 @@ Clarinet.test({
     let wallet_2 = accounts.get("wallet_2")!;
     let pool_1 = accounts.get("deployer")!;
     let pool_2 = accounts.get("wallet_8")!;
-    const poxDelegationContract = pool_1.address + ".pox-delegation";
+    const poxDelegationContract = pool_1.address + ".pox-pools-1-cycle";
 
     // info before delegation
     let response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);

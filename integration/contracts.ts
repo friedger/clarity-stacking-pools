@@ -105,7 +105,7 @@ export namespace HelperContract {
 
 export namespace PoxDelegationContract {
     export const address = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
-    export const name = "pox-delegation";
+    export const name = "pox-pools-1-cycle";
 
     // Functions
     export namespace Functions {

@@ -6,7 +6,7 @@ export function poxDelegationAllowContractCaller(
   user: Account
 ) {
   return Tx.contractCall(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "allow-contract-caller",
     [
       types.principal(contractCaller),
@@ -25,7 +25,7 @@ export function delegateStx(
   user: Account
 ) {
   return Tx.contractCall(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "delegate-stx",
     [
       types.uint(amount),
@@ -45,7 +45,7 @@ export function delegateStackStx(
   poolOperator: Account
 ) {
   return Tx.contractCall(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "delegate-stack-stx",
     [
       types.list(
@@ -71,7 +71,7 @@ export function delegateStackStxSimple(
   poolOperator: Account
 ) {
   return Tx.contractCall(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "delegate-stack-stx-simple",
     [
       types.list(members.map((u) => types.principal(u.address))),
@@ -88,7 +88,7 @@ export function getStatusListsLastIndex(
   user: Account
 ) {
   return chain.callReadOnlyFn(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "get-status-lists-last-index",
     [
       types.principal(poolAddress),
@@ -106,7 +106,7 @@ export function getStatusList(
   user: Account
 ) {
   return chain.callReadOnlyFn(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "get-status-list",
     [
       types.principal(poolAddress),
@@ -124,7 +124,7 @@ export function getTotal(
   user: Account
 ) {
   return chain.callReadOnlyFn(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "get-total",
     [
       types.principal(poolAddress),
@@ -141,7 +141,7 @@ export function getStatus(
   user: Account
 ) {
   return chain.callReadOnlyFn(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "get-status",
     [types.principal(poolAddress), types.principal(userAddress)],
     user.address
@@ -150,7 +150,7 @@ export function getStatus(
 
 export function getUserData(userAddress: string, chain: Chain, user: Account) {
   return chain.callReadOnlyFn(
-    "pox-delegation",
+    "pox-pools-1-cycle",
     "get-user-data",
     [types.principal(userAddress)],
     user.address

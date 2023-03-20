@@ -16,10 +16,10 @@ plan:
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
-            contract-name: pox-delegation
+            contract-name: pox-pools-1-cycle
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 163280
-            path: contracts/pox-delegation.clar
+            path: contracts/pox-pools-1-cycle.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:

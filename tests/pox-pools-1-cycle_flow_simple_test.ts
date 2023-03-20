@@ -5,7 +5,7 @@ import {
 import {
   delegateStackStxSimple,
   delegateStx,
-} from "./client/pox-delegation-client.ts";
+} from "./client/pox-pools-1-cycle-client.ts";
 import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import { btcAddrWallet1, btcAddrWallet2, poxAddrPool1 } from "./constants.ts";
 
@@ -15,7 +15,7 @@ Clarinet.test({
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
     let wallet_2 = accounts.get("wallet_2")!;
-    const poxDelegationContract = deployer.address + ".pox-delegation";
+    const poxDelegationContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
       allowContractCaller(poxDelegationContract, undefined, deployer),
