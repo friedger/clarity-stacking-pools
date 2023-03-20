@@ -21,6 +21,6 @@ The pool operator is the contract itself; only reward distributions happens thro
 
 This contract will lock STX for 1 cycle only. Users can revoke pool membership at any time and their STX will unlock automatically 1 day after the end of the current cycle.
 
-This contract can be adapted for rewards in BTC similar to pox-pools-1-cycle.
+This contract can be adapted for users to provide a btc address similar to pox-pools-1-cycle.
 
 Users can increase the delegated amount of STX for the next cycle at any time before the start of the next cycle.
