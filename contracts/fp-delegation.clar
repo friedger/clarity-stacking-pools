@@ -54,7 +54,7 @@
 (define-constant err-pox-address-deactivated (err u504))
 ;; Error code 9 is used by pox-2 contract
 (define-constant err-stacking-permission-denied (err u609))
-;; Allowed contract-callers
+;; Allowed contract-callers handling a user's stacking activity.
 (define-map allowance-contract-callers
     { sender: principal, contract-caller: principal }
     { until-burn-ht: (optional uint) })
@@ -305,10 +305,10 @@
           (< burn-block-height expires-at))))
 
 
-;; Get the burn height at which a particular contract is allowed to stack for a particular principal.
-;; Returns (some (some X)) if X is the burn height at which the allowance terminates
-;; Returns (some none) if the caller is allowed indefinitely
-;; Returns none if there is no allowance record
+;; Returns the burn height at which a particular contract is allowed to stack for a particular principal.
+;; The result is (some (some X)) if X is the burn height at which the allowance terminates.
+;; The result is (some none) if the caller is allowed indefinitely.
+;; The result is none if there is no allowance record.
 (define-read-only (get-allowance-contract-callers (sender principal) (calling-contract principal))
     (map-get? allowance-contract-callers { sender: sender, contract-caller: calling-contract })
 )
