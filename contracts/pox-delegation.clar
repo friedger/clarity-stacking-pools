@@ -1,7 +1,7 @@
 ;; @contract PoX-2 wrapper contract for stacking pools
 ;; @version 1
 
-;; User calls delegate-stx at first and provide a btc address to receive rewards.
+;; User calls delegate-stx at first and provides a btc address to receive rewards.
 ;; Pool operators lock the user's delegated STX tokens according to their rules.
 ;; Some pools require a minimum amount. Most pool operators lock the delegated STX
 ;; for the next cycle only.
@@ -238,7 +238,7 @@
   status-list: (map-get? grouped-stackers {pool: pool, reward-cycle: reward-cycle, index: index})}
 )
 
-;; Returns currently delegated amount
+;; Returns currently delegated amount for a given user
 (define-read-only (get-delegated-amount (user principal))
   (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
 
