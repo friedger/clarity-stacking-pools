@@ -209,6 +209,11 @@
     (asserts! (not (is-eq contract-caller new-admin)) err-forbidden)
     (ok (map-set reward-admins new-admin enable))))
 
+;; Withdraws all stx that was (accidentially) sent to this contract
+(define-public (withdraw-stx)
+  (let ((admin contract-caller))
+    (asserts! (default-to false (map-get? reward-admins admin)) err-unauthorized)
+    (as-contract (stx-transfer? (stx-get-balance tx-sender) tx-sender admin))))
 ;;
 ;; Read-only functions
 ;;
