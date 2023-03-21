@@ -43,6 +43,7 @@ export const PoxErrors = {
 
 export const FpErrors = {
   Unauthorized: 401,
+  Forbidden: 403,
   TooEarly: 500,
   PoxAddressDeactivated: 504,
   StackingPermissionDenied: 609,

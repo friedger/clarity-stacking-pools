@@ -64,14 +64,13 @@ export function setStxBuffer(amount: number, user: Account) {
 }
 
 export function setPoolPoxAddress(
-  hashbytes: string,
-  version: string,
+  poxAddress: { hashbytes: string; version: string },
   user: Account
 ) {
   return Tx.contractCall(
     "pox-pool-self-service",
     "set-pool-pox-address",
-    [types.tuple({ hashbytes: hashbytes, version: version })],
+    [types.tuple(poxAddress)],
     user.address
   );
 }
@@ -85,6 +84,15 @@ export function setRewardAdmin(
     "pox-pool-self-service",
     "set-reward-admin",
     [types.principal(newAdmin), types.bool(enable)],
+    user.address
+  );
+}
+
+export function withdrawStx(user: Account) {
+  return Tx.contractCall(
+    "pox-pool-self-service",
+    "withdraw-stx",
+    [],
     user.address
   );
 }

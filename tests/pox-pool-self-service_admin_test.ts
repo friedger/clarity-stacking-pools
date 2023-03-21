@@ -1,15 +1,16 @@
 import { allowContractCaller } from "./client/pox-2-client.ts";
 import {
   delegateStx,
-  delegateStackStx,
   delegateStackStxMany,
   setActive,
   setRewardAdmin,
   setStxBuffer,
   setPoolPoxAddress,
+  withdrawStx,
 } from "./client/pox-pool-self-service-client.ts";
-import { FpErrors } from "./constants.ts";
-import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
+import { FpErrors, btcAddrWallet1, poxAddrFP } from "./constants.ts";
+import { Clarinet, Chain, Account, assertEquals, Tx } from "./deps.ts";
+import { expectPartialStackedByCycle } from "./utils.ts";
 
 Clarinet.test({
   name: "Ensure that admin can deactivate contract",
@@ -17,12 +18,12 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract =
+    const poxPoolSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
       setActive(false, deployer),
-      allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
+      allowContractCaller(poxPoolSelfServiceContract, undefined, wallet_1),
       delegateStx(20_000_000_000_000, wallet_1),
       delegateStackStxMany([wallet_1], deployer),
     ]);
@@ -46,7 +47,7 @@ Clarinet.test({
 });
 
 Clarinet.test({
-  name: "Ensure that non-admin can use admin functions",
+  name: "Ensure that non-admin cannot use admin functions",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
@@ -54,11 +55,101 @@ Clarinet.test({
       setActive(false, wallet_1),
       setRewardAdmin(wallet_1.address, true, wallet_1),
       setStxBuffer(1_000_000_000_000, wallet_1),
+      setPoolPoxAddress(btcAddrWallet1, wallet_1),
+      withdrawStx(wallet_1),
     ]);
 
-    assertEquals(block.receipts.length, 3);
+    assertEquals(block.receipts.length, 5);
     block.receipts.map((r: any) =>
       r.result.expectErr().expectUint(FpErrors.Unauthorized)
     );
+  },
+});
+
+Clarinet.test({
+  name: "Ensure that admin can set stx buffer",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    const wallet_1 = accounts.get("wallet_1")!;
+    const poxPoolSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
+
+    let block = chain.mineBlock([
+      setStxBuffer(1_000, deployer),
+      allowContractCaller(poxPoolSelfServiceContract, undefined, wallet_1),
+      delegateStx(10_000_000, wallet_1),
+    ]);
+    block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
+    expectPartialStackedByCycle(poxAddrFP, 1, 9_999_000, chain, deployer);
+  },
+});
+
+Clarinet.test({
+  name: "Ensure that admin can set pool address",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    const wallet_1 = accounts.get("wallet_1")!;
+    const poxPoolSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
+
+    let block = chain.mineBlock([
+      setPoolPoxAddress(btcAddrWallet1, deployer),
+      allowContractCaller(poxPoolSelfServiceContract, undefined, wallet_1),
+      delegateStx(10_000_000, wallet_1),
+    ]);
+    block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
+    expectPartialStackedByCycle(btcAddrWallet1, 1, 9_000_000, chain, deployer);
+  },
+});
+
+// Clarinet does not allow to send to a contract
+/*
+Clarinet.test({
+  name: "Ensure that admin can withdraw any stx",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    const wallet_1 = accounts.get("wallet_1")!;
+    const poxPoolSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
+
+    // try when there is 0 balance
+    let block = chain.mineBlock([withdrawStx(deployer)]);
+    block.receipts[0].result.expectErr().expectUint(3); // amount not positive
+
+    block = chain.mineBlock([
+      Tx.transferSTX(
+        100_000_000_000_000,
+        wallet_1.address,
+        poxPoolSelfServiceContract
+      ),
+      withdrawStx(deployer),
+    ]);
+    block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[0].result.expectOk().expectBool(true);
+  },
+});
+*/
+
+Clarinet.test({
+  name: "Ensure that there is always an admin",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    const wallet_1 = accounts.get("wallet_1")!;
+    let block = chain.mineBlock([
+      setRewardAdmin(deployer.address, false, deployer),
+      setRewardAdmin(deployer.address, false, wallet_1),
+      setRewardAdmin(wallet_1.address, true, deployer),
+      setRewardAdmin(deployer.address, false, deployer),
+      setRewardAdmin(deployer.address, false, wallet_1),
+    ]);
+
+    block.receipts[0].result.expectErr().expectUint(FpErrors.Forbidden);
+    block.receipts[1].result.expectErr().expectUint(FpErrors.Unauthorized);
+    block.receipts[2].result.expectOk().expectBool(true);
+    block.receipts[3].result.expectErr().expectUint(FpErrors.Forbidden);
+    block.receipts[4].result.expectOk().expectBool(true);
   },
 });
