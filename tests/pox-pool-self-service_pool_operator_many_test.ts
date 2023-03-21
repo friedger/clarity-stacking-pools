@@ -4,18 +4,20 @@ import {
   delegateStackStx,
   delegateStackStxMany,
 } from "./client/pox-pool-self-service-client.ts";
+import { delegateStx as poxDelegateStx } from "./client/pox-2-client.ts";
 import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import { expectPartialStackedByCycle } from "./utils.ts";
 import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
 import { expectTotalStackedByCycle } from "./utils.ts";
 
 Clarinet.test({
-  name: "Ensure that user can lock for others",
+  name: "See that on simnet users can't lock for others",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
@@ -32,7 +34,57 @@ Clarinet.test({
     block.receipts[2].result.expectOk().expectBool(true);
     block.receipts[3].result.expectOk().expectBool(true);
 
-    delegateStackStxMany([wallet_1, wallet_2], deployer);
+    chain.mineEmptyBlock(1050);
+
+    block = chain.mineBlock([
+      delegateStackStxMany([wallet_1, wallet_2], deployer),
+    ]);
+
+    // problem with simnet
+    block.receipts[0].result
+      .expectOk()
+      .expectList()
+      .map((entry: any) =>
+        entry.expectErr().expectUint(PoxErrors.StackExtendNotLocked * 1000000)
+      );
+  },
+});
+
+Clarinet.test({
+  name: "Ensure that user can lock for others who used pox",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get("deployer")!;
+    const wallet_1 = accounts.get("wallet_1")!;
+    const wallet_2 = accounts.get("wallet_2")!;
+    const poxPoolSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
+
+    let block = chain.mineBlock([
+      //no allow call for wallet_1
+      allowContractCaller(poxPoolSelfServiceContract, undefined, wallet_2),
+
+      poxDelegateStx(20_000_000_000_000, poxPoolSelfServiceContract, wallet_1),
+      delegateStx(2_000_000, wallet_2),
+    ]);
+
+    // check allow contract caller
+    block.receipts[0].result.expectOk().expectBool(true);
+    // check delegation calls
+    block.receipts[1].result.expectOk().expectBool(true);
+    block.receipts[2].result.expectOk().expectBool(false); // no aggregation
+
+    chain.mineEmptyBlock(1050);
+
+    block = chain.mineBlock([
+      delegateStackStxMany([wallet_1, wallet_2], deployer),
+    ]);
+    const resultList = block.receipts[0].result.expectOk().expectList();
+
+    resultList[0]
+      .expectOk()
+      .expectTuple()
+      ["lock-amount"].expectUint(19999999000000);
+    resultList[1].expectErr().expectUint(PoxErrors.StackExtendNotLocked * 1000000);
   },
 });
 
@@ -43,7 +95,8 @@ Clarinet.test({
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
 
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
     // current cycle is cycle 0
 
     // delegate 2 stx for cycle 1
@@ -78,7 +131,7 @@ Clarinet.test({
       .expectList()[0]
       .expectErr()
       .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
-      block.receipts[0].result
+    block.receipts[0].result
       .expectOk()
       .expectList()[1]
       .expectErr()
@@ -92,7 +145,8 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),

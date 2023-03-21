@@ -42,6 +42,8 @@ export const PoxErrors = {
 };
 
 export const FpErrors = {
+  Unauthorized: 401,
   TooEarly: 500,
-  StackingPermissionDenied: 709,
+  PoxAddressDeactivated: 504,
+  StackingPermissionDenied: 609,
 };

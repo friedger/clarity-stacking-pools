@@ -16,6 +16,15 @@ export function allowContractCaller(
   );
 }
 
+export function delegateStx(amount: number, delegateTo: string, user: Account) {
+  return Tx.contractCall(
+    "SP000000000000000000002Q6VF78.pox-2",
+    "delegate-stx",
+    [types.uint(amount), types.principal(delegateTo), types.none(), types.none()],
+    user.address
+  );
+}
+
 export function stackAggregationCommitIndexed(
   poxAddr: { version: string; hashbytes: string },
   cycle: number,
