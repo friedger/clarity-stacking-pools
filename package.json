@@ -1,11 +1,11 @@
 {
-  "name": "clarity-xverse",
-  "version": "0.0.0",
+  "name": "clarity-stacking-pools",
+  "version": "2.1.0",
   "author": {
     "name": "Friedger Müffke",
     "email": "mail@friedger.de"
   },
-  "repository": "https://github.com/friedger/clarity-xverse.git",
+  "repository": "https://github.com/friedger/clarity-stacking-pools.git",
   "private": true,
   "engines": {
     "node": ">=14"
