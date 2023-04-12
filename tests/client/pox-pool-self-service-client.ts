@@ -87,12 +87,3 @@ export function setRewardAdmin(
     user.address
   );
 }
-
-export function withdrawStx(user: Account) {
-  return Tx.contractCall(
-    "pox-pool-self-service",
-    "withdraw-stx",
-    [],
-    user.address
-  );
-}

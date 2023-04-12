@@ -6,7 +6,6 @@ import {
   setRewardAdmin,
   setStxBuffer,
   setPoolPoxAddress,
-  withdrawStx,
 } from "./client/pox-pool-self-service-client.ts";
 import { FpErrors, btcAddrWallet1, poxAddrFP } from "./constants.ts";
 import { Clarinet, Chain, Account, assertEquals, Tx } from "./deps.ts";
@@ -56,10 +55,9 @@ Clarinet.test({
       setRewardAdmin(wallet_1.address, true, wallet_1),
       setStxBuffer(1_000_000_000_000, wallet_1),
       setPoolPoxAddress(btcAddrWallet1, wallet_1),
-      withdrawStx(wallet_1),
     ]);
 
-    assertEquals(block.receipts.length, 5);
+    assertEquals(block.receipts.length, 4);
     block.receipts.map((r: any) =>
       r.result.expectErr().expectUint(FpErrors.Unauthorized)
     );
@@ -104,34 +102,6 @@ Clarinet.test({
     expectPartialStackedByCycle(btcAddrWallet1, 1, 9_000_000, chain, deployer);
   },
 });
-
-// Clarinet does not allow to send to a contract
-/*
-Clarinet.test({
-  name: "Ensure that admin can withdraw any stx",
-  async fn(chain: Chain, accounts: Map<string, Account>) {
-    const deployer = accounts.get("deployer")!;
-    const wallet_1 = accounts.get("wallet_1")!;
-    const poxPoolSelfServiceContract =
-      deployer.address + ".pox-pool-self-service";
-
-    // try when there is 0 balance
-    let block = chain.mineBlock([withdrawStx(deployer)]);
-    block.receipts[0].result.expectErr().expectUint(3); // amount not positive
-
-    block = chain.mineBlock([
-      Tx.transferSTX(
-        100_000_000_000_000,
-        wallet_1.address,
-        poxPoolSelfServiceContract
-      ),
-      withdrawStx(deployer),
-    ]);
-    block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[0].result.expectOk().expectBool(true);
-  },
-});
-*/
 
 Clarinet.test({
   name: "Ensure that there is always an admin",
