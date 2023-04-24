@@ -1,0 +1,100 @@
+---
+id: 0
+name: Devnet deployment
+network: devnet
+stacks-node: "http://localhost:20443"
+bitcoin-node: "http://devnet:devnet@localhost:18443"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
+            method: delegate-stx
+            parameters:
+              - u100000000000000
+              - "'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG"
+              - none
+              - none
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND
+            method: delegate-stx
+            parameters:
+              - u100000000000000
+              - "'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC"
+              - none
+              - none
+            cost: 10000
+    - id: 1
+      transactions:
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
+            method: delegate-stack-stx
+            parameters:
+              - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
+              - u9900000000000
+              - "{version: 0x04, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
+              - u118
+              - u1
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
+            method: stack-aggregation-commit-indexed
+            parameters:
+              - "{version: 0x04, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
+              - u2
+            cost: 10000
+    - id: 2
+      transactions:
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
+            method: revoke-delegate-stx
+            parameters: []
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
+            method: delegate-stx
+            parameters:
+              - u100000000000000
+              - "'ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC"
+              - none
+              - none
+            cost: 10000
+    - id: 3
+      transactions:
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
+            method: delegate-stack-increase
+            parameters:
+              - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
+              - "{version: 0x04, hashbytes: 0x83ed66860315e334010bbfb76eb3eef887efee0a}"
+              - u100000000000
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
+            method: delegate-stack-stx
+            parameters:
+              - "'ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND"
+              - u9900000000000
+              - "{version: 0x04, hashbytes: 0x83ed66860315e334010bbfb76eb3eef887efee0a}"
+              - u118
+              - u1
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-2
+            expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
+            method: stack-aggregation-commit-indexed
+            parameters:
+              - "{version: 0x04, hashbytes: 0x83ed66860315e334010bbfb76eb3eef887efee0a}"
+              - u2
+            cost: 10000
+      epoch: "2.1"
