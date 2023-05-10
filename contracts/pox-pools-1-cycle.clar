@@ -1,4 +1,4 @@
-;; @contract PoX-2 wrapper contract for stacking pools
+;; @contract pox-3 wrapper contract for stacking pools
 ;; @version 1
 
 ;; User calls delegate-stx at first and provides a btc address to receive rewards.
@@ -15,7 +15,7 @@
 (define-constant err-no-stacker-info (err u501))
 (define-constant err-no-user-info (err u502))
 (define-constant err-decrease-forbidden (err u503))
-;; Error code 9 is used by pox-2 contract for stacking-permission-denied
+;; Error code 9 is used by pox-3 contract for stacking-permission-denied
 (define-constant err-stacking-permission-denied (err u609))
 
 ;; Allowed contract-callers handling a user's stacking activity.
@@ -55,7 +55,7 @@
     (map-set grouped-stackers-len {pool: pool, reward-cycle: reward-cycle} index)))
 
 (define-private (map-set-details (pool principal) (details {lock-amount: uint, stacker: principal, unlock-burn-height: uint, pox-addr: {hashbytes: (buff 32), version: (buff 1)}, cycle: uint}))
-  (let ((reward-cycle (+ (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle) u1))
+  (let ((reward-cycle (+ (contract-call? 'ST000000000000000000002AMW42H.pox-3 current-pox-reward-cycle) u1))
         (last-index (get-status-lists-last-index pool reward-cycle))
         (stacker-key {pool: pool, reward-cycle: reward-cycle, index: last-index}))
     (match (map-get? grouped-stackers stacker-key)
@@ -66,17 +66,17 @@
     (map-set grouped-totals {pool: pool, reward-cycle: reward-cycle} (+ (get-total pool reward-cycle) (get lock-amount details)))))
 
 ;;
-;; Helper functions for pox-2 calls
+;; Helper functions for pox-3 calls
 ;;
 
 ;; Get stacker info
 (define-private (pox-get-stacker-info (user principal))
-  (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-stacker-info user))
+  (contract-call? 'ST000000000000000000002AMW42H.pox-3 get-stacker-info user))
 
 ;; Revoke and delegate stx
 (define-private (pox-delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint)))
-  (let ((result-revoke (contract-call? 'SP000000000000000000002Q6VF78.pox-2 revoke-delegate-stx)))
-    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stx amount-ustx delegate-to until-burn-ht none)
+  (let ((result-revoke (contract-call? 'ST000000000000000000002AMW42H.pox-3 revoke-delegate-stx)))
+    (match (contract-call? 'ST000000000000000000002AMW42H.pox-3 delegate-stx amount-ustx delegate-to until-burn-ht none)
       success (ok success)
       error (err (* u1000 (to-uint error))))))
 
@@ -94,10 +94,10 @@
                   (start-burn-ht uint))
   (let ((status (stx-account user)))
     (asserts! (>= amount-ustx (get locked status)) err-decrease-forbidden)
-    (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-extend
+    (match (contract-call? 'ST000000000000000000002AMW42H.pox-3 delegate-stack-extend
              user pox-address u1)
       success (if (> amount-ustx (get locked status))
-                (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-increase
+                (match (contract-call? 'ST000000000000000000002AMW42H.pox-3 delegate-stack-increase
                          user pox-address (- amount-ustx (get locked status)))
                   success-increase (ok {lock-amount: (get total-locked success-increase),
                                         stacker: user,
@@ -144,7 +144,7 @@
               user-details
                 ;; Call delegate-stack-stx
                 ;; On failure, call delegate-stack-extend and increase
-              (match (contract-call? 'SP000000000000000000002Q6VF78.pox-2 delegate-stack-stx
+              (match (contract-call? 'ST000000000000000000002AMW42H.pox-3 delegate-stack-stx
                        user amount-ustx
                        pox-address start-burn-ht u1)
                 stacker-details  (begin
@@ -179,7 +179,7 @@
     ;; Must be called directly by the tx-sender or by an allowed contract-caller
     (asserts! (check-caller-allowed) err-stacking-permission-denied)
     (map-set user-data tx-sender
-      {pox-addr: user-pox-addr, cycle: (contract-call? 'SP000000000000000000002Q6VF78.pox-2 current-pox-reward-cycle)})
+      {pox-addr: user-pox-addr, cycle: (contract-call? 'ST000000000000000000002AMW42H.pox-3 current-pox-reward-cycle)})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
 
 ;; @desc Pool admins call this function to lock stacks of their pool members in batches for 1 cycle.
@@ -232,7 +232,7 @@
 
 ;; Returns currently delegated amount for a given user
 (define-read-only (get-delegated-amount (user principal))
-  (default-to u0 (get amount-ustx (contract-call? 'SP000000000000000000002Q6VF78.pox-2 get-delegation-info user))))
+  (default-to u0 (get amount-ustx (contract-call? 'ST000000000000000000002AMW42H.pox-3 get-delegation-info user))))
 
 ;; Returns information about last delegation call for a given user
 ;; This information can be obsolete due to a normal revoke call

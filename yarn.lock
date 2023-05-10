@@ -132,10 +132,8 @@
   resolved "https://registry.yarnpkg.com/@hirosystems/chainhook-types/-/chainhook-types-1.1.2.tgz#9e6788c6c74f3dc2bee64b7f97f1b5cd4c2db1cb"
   integrity sha512-klQDKRyiPqF9fgDetMLTPMcB4A/+Vo7px74RbzzvmnCSDMPQua0DD5zhfuo12Ga3pexFFoIftIqnSjWvjncKNQ==
 
-"@hirosystems/stacks-devnet-js@=1.5.1":
-  version "1.5.1"
-  resolved "https://registry.yarnpkg.com/@hirosystems/stacks-devnet-js/-/stacks-devnet-js-1.5.1.tgz#862942a646bf914d01e29f1669bf656d4f6c2e69"
-  integrity sha512-TrRJ6RMcHN7YaYtVXAHV9ZnoY7RF3awGCgjVwhhswO8DP+k8wXJp0wmzkR4i7lrt5enCN2llCmGVTEYLd1A3aA==
+"@hirosystems/stacks-devnet-js@file:../../hirosystems/clarinet/components/stacks-devnet-js":
+  version "1.5.4"
   dependencies:
     "@hirosystems/chainhook-types" "^1.1.2"
     "@mapbox/node-pre-gyp" "^1.0.8"
@@ -295,15 +293,23 @@
     "@types/bn.js" "^5.1.0"
     "@types/node" "^18.0.4"
 
-"@stacks/encryption@^6.5.0":
-  version "6.5.0"
-  resolved "https://registry.yarnpkg.com/@stacks/encryption/-/encryption-6.5.0.tgz#826851979b1ccc5491a0907e30e2b7e22621436a"
-  integrity sha512-QE1+gy1x6spGkpK5PnZxKoX1hL8eeIYxYa5HNMl4cbdIVKaFgqjoGFKMtTA/tQMc91T/saXLqbQLyh/U4AVpTA==
+"@stacks/common@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@stacks/common/-/common-6.5.2.tgz#8e2e865856ebcdb082d5c98383f6df7351147935"
+  integrity sha512-tnkyEIA7YgX9GIkqlHocQPPax25uaboJ4aTX5wVs6kAGXY10+XI7VamRG4o+4DqnFVKwvIHR2fGcxdhtxNb/+Q==
+  dependencies:
+    "@types/bn.js" "^5.1.0"
+    "@types/node" "^18.0.4"
+
+"@stacks/encryption@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@stacks/encryption/-/encryption-6.5.2.tgz#19d23d815ab32c66a276c888598a642fa1de324f"
+  integrity sha512-+xh0aEIal9XZ/E3XEKP7KklbhWYcaXUmDboJdj2cCKlVv3g7gzKWNgCEsc8+6asbKjy2ClAYvIEFaQRDDjFljw==
   dependencies:
     "@noble/hashes" "1.1.5"
     "@noble/secp256k1" "1.7.1"
     "@scure/bip39" "1.1.0"
-    "@stacks/common" "^6.0.0"
+    "@stacks/common" "^6.5.2"
     "@types/node" "^18.0.4"
     base64-js "^1.5.1"
     bs58 "^5.0.0"
@@ -318,17 +324,25 @@
     "@stacks/common" "^6.0.0"
     cross-fetch "^3.1.5"
 
-"@stacks/stacking@^6.0.0":
-  version "6.5.0"
-  resolved "https://registry.yarnpkg.com/@stacks/stacking/-/stacking-6.5.0.tgz#798e9649ae6acf90363d37376685ac2907ed39c4"
-  integrity sha512-Kb8FK+NxEFDXP2r9xXGdeR7cZp52Cz5btpW4xKAEM7Ze3QPB6cM8IALvMBh3e53qqw8sO/dpRqcIjrNgLf5gqg==
+"@stacks/network@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@stacks/network/-/network-6.5.2.tgz#48fdffa54b32911fa2fcc24a15fc85cff8fed475"
+  integrity sha512-+XNneecXCitis7OGDoCMqfKp0j4SICaij6XN9JTq+pAoaCbuJqLRZrrVP/ApkWbotTzeVZIbrZPqMLqkdgGTrg==
+  dependencies:
+    "@stacks/common" "^6.5.2"
+    cross-fetch "^3.1.5"
+
+"@stacks/stacking@^6.0.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@stacks/stacking/-/stacking-6.5.2.tgz#1a741891ea1522bf93ebdc9af70e0faeda912d2f"
+  integrity sha512-G9li+CY7sFR49yXqX6WFtM5Su/hLF/z0kpcqcc1/Sc7Y3Ltde3oBqPnk430z8Dvn6rZM5eg5hA8n1rGjQ0T0GA==
   dependencies:
     "@scure/base" "1.1.1"
-    "@stacks/common" "^6.0.0"
-    "@stacks/encryption" "^6.5.0"
-    "@stacks/network" "^6.3.0"
+    "@stacks/common" "^6.5.2"
+    "@stacks/encryption" "^6.5.2"
+    "@stacks/network" "^6.5.2"
     "@stacks/stacks-blockchain-api-types" "^0.61.0"
-    "@stacks/transactions" "^6.5.0"
+    "@stacks/transactions" "^6.5.2"
     bs58 "^5.0.0"
 
 "@stacks/stacks-blockchain-api-types@^0.61.0":
@@ -336,7 +350,7 @@
   resolved "https://registry.yarnpkg.com/@stacks/stacks-blockchain-api-types/-/stacks-blockchain-api-types-0.61.0.tgz#f8bc61ad7781fdc0d9e9db711580db984f164e93"
   integrity sha512-yPOfTUboo5eA9BZL/hqMcM71GstrFs9YWzOrJFPeP4cOO1wgYvAcckgBRbgiE3NqeX0A7SLZLDAXLZbATuRq9w==
 
-"@stacks/transactions@^6.0.0", "@stacks/transactions@^6.5.0":
+"@stacks/transactions@^6.5.0":
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@stacks/transactions/-/transactions-6.5.0.tgz#ec6bd94b21fe34683b53af28fcaeaf9cac093bdd"
   integrity sha512-kwE8cZq+QdAum4/LC+lSlAXVvzkdsSHTkCbfg4+VCWPBqA+gdXEqZe6R9SNBtMb8yGQrqUY8uIGRLVCWcXJ8zQ==
@@ -345,6 +359,18 @@
     "@noble/secp256k1" "1.7.1"
     "@stacks/common" "^6.0.0"
     "@stacks/network" "^6.3.0"
+    c32check "^2.0.0"
+    lodash.clonedeep "^4.5.0"
+
+"@stacks/transactions@^6.5.2":
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/@stacks/transactions/-/transactions-6.5.2.tgz#6b6507968d11f23720dcd1e1e23c51d1b1580fe7"
+  integrity sha512-xL4XF4xSFFJ+VMzeahBenGdg1T+y0Q0fSNA09jz7knTnnXvdAzzC+RP59xzuIjrAY/IWYO3X1sf0MGm9IIhYOg==
+  dependencies:
+    "@noble/hashes" "1.1.5"
+    "@noble/secp256k1" "1.7.1"
+    "@stacks/common" "^6.5.2"
+    "@stacks/network" "^6.5.2"
     c32check "^2.0.0"
     lodash.clonedeep "^4.5.0"
 

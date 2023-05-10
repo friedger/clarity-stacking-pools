@@ -1,38 +1,32 @@
 import {
-  buildDevnetNetworkOrchestrator,
-  DEFAULT_EPOCH_TIMELINE,
-  getBitcoinBlockHeight,
-  getNetworkIdFromEnv,
-} from "./helpers";
-import {
-  broadcastStackSTX,
-  waitForNextPreparePhase,
-  waitForNextRewardPhase,
-  getPoxInfo,
-  waitForRewardCycleId,
-  initiateStacking,
-  createVault,
-  getStackerInfo,
-  stackIncrease,
-} from "./helpers";
-import { Accounts } from "./constants";
-import { StacksTestnet } from "@stacks/network";
-import {
   DevnetNetworkOrchestrator,
   StacksBlockMetadata,
 } from "@hirosystems/stacks-devnet-js";
+import { StacksTestnet } from "@stacks/network";
+import { Accounts } from "./constants";
+import {
+  buildDevnetNetworkOrchestrator,
+  FAST_FORWARD_TO_EPOCH_2_4,
+  getNetworkIdFromEnv,
+  getPoxInfo,
+  waitForRewardCycleId,
+  waitForStacksTransaction,
+} from "./helpers";
 
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { broadcastAllowContractCallerContracCall } from "./allowContractCaller";
-import { afterAll, beforeAll, describe, it } from "vitest";
 import { broadcastDelegateStackStx, broadcastDelegateStx } from "./helper-fp";
+import { cvToString, responseOkCV, trueCV } from "@stacks/transactions";
 
-describe("testing stacking under epoch 2.1", () => {
+describe("testing stacking under epoch 2.4", () => {
   let orchestrator: DevnetNetworkOrchestrator;
-  let timeline = DEFAULT_EPOCH_TIMELINE;
+  const timeline = FAST_FORWARD_TO_EPOCH_2_4;
+  let aliceNonce = 0;
+  let bobNonce = 0;
 
   beforeAll(() => {
     orchestrator = buildDevnetNetworkOrchestrator(getNetworkIdFromEnv());
-    orchestrator.start(120000);
+    orchestrator.start(1000);
   });
 
   afterAll(() => {
@@ -41,36 +35,40 @@ describe("testing stacking under epoch 2.1", () => {
 
   it("test delegation with fp for three cycles", async () => {
     const network = new StacksTestnet({ url: orchestrator.getStacksNodeUrl() });
-
-    let chainUpdate = await waitForRewardCycleId(network, orchestrator, 2);
-    console.log(chainUpdate.new_blocks[0].block.metadata);
+    // Wait for 2.4 to go live
+    await orchestrator.waitForStacksBlockAnchoredOnBitcoinBlockOfHeight(
+      timeline.epoch_2_4
+    );
+    await orchestrator.waitForNextStacksBlock();
 
     let poxInfo = await getPoxInfo(network);
-    console.log("PoxInfo, Pre conventional stacking:", poxInfo);
+    console.log("PoxInfo", poxInfo);
 
-    await broadcastAllowContractCallerContracCall({
+    // allow contract fast pool contract to manage stacking
+    let response = await broadcastAllowContractCallerContracCall({
       network,
-      nonce: 0,
-      senderKey: Accounts.WALLET_4.secretKey,
+      nonce: aliceNonce++,
+      senderKey: Accounts.WALLET_1.secretKey,
     });
+    expect(response.error).toBeUndefined();
 
-    await broadcastDelegateStx({
+    // delegate 10m STX
+    response = await broadcastDelegateStx({
       amountUstx: 10_000_000_000,
-      user: Accounts.WALLET_4,
-      nonce: 1,
+      user: Accounts.WALLET_1,
+      nonce: aliceNonce++,
       network,
     });
+    expect(response.error, response.reason).toBeUndefined();
 
-    chainUpdate = await orchestrator.waitForNextStacksBlock();
-    console.log(
-      "** " +
-        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
-          .bitcoin_anchor_block_identifier.index
+    let [block, tx] = await waitForStacksTransaction(
+      orchestrator,
+      response.txid
     );
-    console.log(JSON.stringify(chainUpdate));
+    expect(tx.success).toBeTruthy();
 
     await waitForRewardCycleId(network, orchestrator, 3);
-    chainUpdate = await orchestrator.waitForNextStacksBlock();
+    let chainUpdate = await orchestrator.waitForNextStacksBlock();
     console.log(
       "** " +
         (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
@@ -78,19 +76,19 @@ describe("testing stacking under epoch 2.1", () => {
     );
     console.log(JSON.stringify(chainUpdate));
 
+    // Alice delegates 11m STX
     await broadcastDelegateStx({
       amountUstx: 11_000_000_000,
-      user: Accounts.WALLET_4,
-      nonce: 2,
+      user: Accounts.WALLET_1,
+      nonce: aliceNonce++,
       network,
     });
-    chainUpdate = await orchestrator.waitForNextStacksBlock();
-    console.log(
-      "** " +
-        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
-          .bitcoin_anchor_block_identifier.index
-    );
-    console.log(JSON.stringify(chainUpdate));
+    expect(response.error).toBeUndefined();
+    [block, tx] = await waitForStacksTransaction(orchestrator, response.txid);
+    expect(tx.success).toBeTruthy();
+    expect(tx.result).toBe(cvToString(responseOkCV(trueCV())));
+
+    console.log(JSON.stringify(block));
 
     await waitForRewardCycleId(network, orchestrator, 4);
 
@@ -102,19 +100,17 @@ describe("testing stacking under epoch 2.1", () => {
     );
     console.log(JSON.stringify(chainUpdate));
 
-    await broadcastDelegateStackStx({
+    // Bob extends Alice's locked STX
+    response = await broadcastDelegateStackStx({
       amountUstx: 11_000_000_000,
-      stacker: Accounts.WALLET_4,
-      user: Accounts.DEPLOYER,
-      nonce: 3,
+      stacker: Accounts.WALLET_1,
+      user: Accounts.WALLET_2,
+      nonce: bobNonce++,
       network,
     });
-    chainUpdate = await orchestrator.waitForNextStacksBlock();
-    console.log(
-      "** " +
-        (chainUpdate.new_blocks[0].block.metadata as StacksBlockMetadata)
-          .bitcoin_anchor_block_identifier.index
-    );
-    console.log(JSON.stringify(chainUpdate));
+    expect(response.error).toBeUndefined();
+    [block, tx] = await waitForStacksTransaction(orchestrator, response.txid);
+    expect(tx.success).toBeTruthy();
+    expect(tx.result).toBe(cvToString(responseOkCV(trueCV())));
   });
 });

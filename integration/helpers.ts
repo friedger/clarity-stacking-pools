@@ -4,7 +4,7 @@ import {
   StacksChainUpdate,
   DevnetNetworkOrchestrator,
   StacksTransactionMetadata,
-  getIsolatedNetworkConfigUsingNetworkId
+  getIsolatedNetworkConfigUsingNetworkId,
 } from "@hirosystems/stacks-devnet-js";
 import { StacksNetwork } from "@stacks/network";
 import {
@@ -22,7 +22,7 @@ import {
   TxBroadcastResult,
   uintCV,
   callReadOnlyFunction,
-  cvToJSON
+  cvToJSON,
 } from "@stacks/transactions";
 import { Constants } from "./constants";
 
@@ -37,27 +37,19 @@ interface Account {
   secretKey: string;
 }
 
-interface EpochTimeline {
-  epoch_2_0: number;
-  epoch_2_05: number;
-  epoch_2_1: number;
-  pox_2_activation: number;
-}
-
-export const DEFAULT_EPOCH_TIMELINE = {
-  epoch_2_0: Constants.DEVNET_DEFAULT_EPOCH_2_0,
-  epoch_2_05: Constants.DEVNET_DEFAULT_EPOCH_2_05,
-  epoch_2_1: Constants.DEVNET_DEFAULT_EPOCH_2_1,
-  pox_2_activation: Constants.DEVNET_DEFAULT_POX_2_ACTIVATION,
+export const FAST_FORWARD_TO_EPOCH_2_4 = {
+  epoch_2_0: 100,
+  epoch_2_05: 102,
+  epoch_2_1: 104,
+  pox_2_activation: 105,
+  epoch_2_2: 106,
+  epoch_2_3: 108,
+  epoch_2_4: 112,
 };
 
 const delay = () => new Promise((resolve) => setTimeout(resolve, 3000));
 
-export function buildDevnetNetworkOrchestrator(
-  networkId: number,
-  timeline: EpochTimeline = DEFAULT_EPOCH_TIMELINE,
-  logs = true
-) {
+export function buildDevnetNetworkOrchestrator(networkId: number, logs = true) {
   let uuid = Date.now();
   let working_dir = `/tmp/stacks-test-${uuid}-${networkId}`;
   let config = {
@@ -235,7 +227,7 @@ export const expectAccountToBe = async (
 
 export async function handleContractCall({
   txOptions,
-  network
+  network,
 }: {
   txOptions: any;
   network: StacksNetwork;
@@ -263,7 +255,10 @@ export const broadcastStackSTX = async (
 ): Promise<TxBroadcastResult> => {
   const { version, data } = decodeBtcAddress(account.btcAddress);
   // @ts-ignore
-  const address = { version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))), hashbytes: bufferCV(data) };
+  const address = {
+    version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))),
+    hashbytes: bufferCV(data),
+  };
 
   const txOptions = {
     contractAddress: Contracts.POX_1.address,
@@ -289,7 +284,7 @@ export const broadcastStackSTX = async (
   return response;
 };
 
-export const createVault = async(
+export const createVault = async (
   collateralAmount: number,
   usda: number,
   network: StacksNetwork,
@@ -299,20 +294,26 @@ export const createVault = async(
 ): Promise<TxBroadcastResult> => {
   const txOptions = {
     contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-freddie-v1-1',
+    contractName: "arkadiko-freddie-v1-1",
     functionName: "collateralize-and-mint",
     functionArgs: [
       uintCV(collateralAmount * 1000000),
       uintCV(usda * 1000000),
       tupleCV({
-        'stack-pox': trueCV(),
-        'auto-payoff': falseCV()
+        "stack-pox": trueCV(),
+        "auto-payoff": falseCV(),
       }),
-      stringAsciiCV('STX-A'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-stx-reserve-v1-1'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-token'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-collateral-types-v3-1'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-oracle-v1-1')
+      stringAsciiCV("STX-A"),
+      contractPrincipalCV(
+        Accounts.DEPLOYER.stxAddress,
+        "arkadiko-stx-reserve-v1-1"
+      ),
+      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, "arkadiko-token"),
+      contractPrincipalCV(
+        Accounts.DEPLOYER.stxAddress,
+        "arkadiko-collateral-types-v3-1"
+      ),
+      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, "arkadiko-oracle-v1-1"),
     ],
     fee,
     nonce,
@@ -326,7 +327,7 @@ export const createVault = async(
   // Broadcast transaction to our Devnet stacks node
   const result = await broadcastTransaction(tx, network);
   return result;
-}
+};
 
 export const initiateStacking = async (
   network: StacksNetwork,
@@ -338,17 +339,16 @@ export const initiateStacking = async (
 ): Promise<TxBroadcastResult> => {
   const { version, data } = decodeBtcAddress(account.btcAddress);
   // @ts-ignore
-  const address = { version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))), hashbytes: bufferCV(data) };
+  const address = {
+    version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))),
+    hashbytes: bufferCV(data),
+  };
 
   const txOptions = {
     contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-stacker-v2-1',
+    contractName: "arkadiko-stacker-v2-1",
     functionName: "initiate-stacking",
-    functionArgs: [
-      tupleCV(address),
-      uintCV(blockHeight),
-      uintCV(cycles),
-    ],
+    functionArgs: [tupleCV(address), uintCV(blockHeight), uintCV(cycles)],
     fee,
     nonce,
     network,
@@ -372,11 +372,9 @@ export const stackIncrease = async (
 ): Promise<TxBroadcastResult> => {
   const txOptions = {
     contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-stacker-v2-1',
+    contractName: "arkadiko-stacker-v2-1",
     functionName: "stack-increase",
-    functionArgs: [
-      stringAsciiCV(stackerName)
-    ],
+    functionArgs: [stringAsciiCV(stackerName)],
     fee,
     nonce,
     network,
@@ -391,9 +389,7 @@ export const stackIncrease = async (
   return result;
 };
 
-export const getStackerInfo = async (
-  network: StacksNetwork
-) => {
+export const getStackerInfo = async (network: StacksNetwork) => {
   const supplyCall = await callReadOnlyFunction({
     contractAddress: Accounts.DEPLOYER.stxAddress,
     contractName: "arkadiko-stacker-v2-1",
@@ -403,7 +399,7 @@ export const getStackerInfo = async (
     network: network,
   });
   const json = cvToJSON(supplyCall);
-  console.log('STACKER INFO JSON:', json);
+  console.log("STACKER INFO JSON:", json);
 
   return json;
-}
+};
