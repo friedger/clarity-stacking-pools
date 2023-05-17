@@ -13,7 +13,7 @@ plan:
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: delegate-stx
             parameters:
-              - u2300000000000
+              - u90000000000000
             cost: 10000
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
@@ -29,5 +29,3 @@ plan:
             parameters:
               - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
             cost: 10000
-
-      epoch: "2.1"

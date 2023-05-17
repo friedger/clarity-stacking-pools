@@ -1,4 +1,4 @@
-import { allowContractCaller } from "./client/pox-2-client.ts";
+import { allowContractCaller, getCycleLength } from "./client/pox-3-client.ts";
 import {
   delegateStx,
   delegateStackStxMany,
@@ -20,6 +20,8 @@ Clarinet.test({
     const poxPoolSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
 
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
+
     let block = chain.mineBlock([
       setActive(false, deployer),
       allowContractCaller(poxPoolSelfServiceContract, undefined, wallet_1),
@@ -34,7 +36,7 @@ Clarinet.test({
       .expectErr()
       .expectUint(FpErrors.PoxAddressDeactivated);
 
-    chain.mineEmptyBlock(1050);
+    chain.mineEmptyBlock(HALF_CYCLE);
 
     block = chain.mineBlock([delegateStackStxMany([wallet_1], deployer)]);
     block.receipts[0].result

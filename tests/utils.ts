@@ -2,7 +2,7 @@ import { Account, Chain } from "./deps.ts";
 import {
   getPartialStackedByCycle,
   getRewardSetPoxAddress,
-} from "./client/pox-2-client.ts";
+} from "./client/pox-3-client.ts";
 import { poxAddrPool1 } from "./constants.ts";
 
 export function expectPartialStackedByCycle(
@@ -29,7 +29,7 @@ export function expectPartialStackedByCycle(
 export function expectTotalStackedByCycle(
   cycle: number,
   index: number,
-  amountUstx: number,
+  amountUstx: number | undefined,
   chain: Chain,
   user: Account
 ) {

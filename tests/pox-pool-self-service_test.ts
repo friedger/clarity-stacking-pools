@@ -1,13 +1,14 @@
-import { allowContractCaller } from "./client/pox-2-client.ts";
+import { allowContractCaller, getCycleLength } from "./client/pox-3-client.ts";
 import {
-  delegateStx,
   delegateStackStx,
+  delegateStx,
 } from "./client/pox-pool-self-service-client.ts";
-import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
-import { expectPartialStackedByCycle } from "./utils.ts";
 import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
-import { poxDelegationAllowContractCaller } from "./client/pox-pools-1-cycle-client.ts";
-import { expectTotalStackedByCycle } from "./utils.ts";
+import { Account, Chain, Clarinet, assertEquals } from "./deps.ts";
+import {
+  expectPartialStackedByCycle,
+  expectTotalStackedByCycle,
+} from "./utils.ts";
 
 Clarinet.test({
   name: "Ensure that users can delegate",
@@ -15,7 +16,8 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
@@ -34,7 +36,6 @@ Clarinet.test({
 
     expectPartialStackedByCycle(poxAddrFP, 1, undefined, chain, deployer);
     expectTotalStackedByCycle(1, 0, 20_000_000_100_100, chain, deployer);
-
   },
 });
 
@@ -43,7 +44,8 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
     // current cycle is cycle 0
 
     // delegate 2 stx for cycle 1
@@ -79,7 +81,9 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
@@ -93,14 +97,14 @@ Clarinet.test({
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // advance to middle of next cycle
-    block = chain.mineEmptyBlock(3149);
+    block = chain.mineEmptyBlock(2 * CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 2 early
-    block = chain.mineBlock([delegateStackStx( wallet_1, wallet_2)]);
-    assertEquals(block.height, 3152);
+    block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
+    assertEquals(block.height, 2 * CYCLE + HALF_CYCLE + 2);
     block.receipts[0].result.expectErr().expectUint(FpErrors.TooEarly);
 
     // extend to cycle 2
-    block = chain.mineBlock([delegateStackStx( wallet_1, wallet_2)]);
+    block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // support for simnet is limited, in particular stx-account returns other values

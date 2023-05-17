@@ -9,7 +9,7 @@ plan:
     - id: 0
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
             method: stack-aggregation-commit-indexed
             parameters:
@@ -17,7 +17,7 @@ plan:
               - u4
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
             method: stack-aggregation-commit-indexed
             parameters:

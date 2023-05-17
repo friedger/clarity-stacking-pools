@@ -9,7 +9,7 @@ plan:
     - id: 0
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: allow-contract-caller
             parameters:
@@ -17,7 +17,7 @@ plan:
               - none
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             method: allow-contract-caller
             parameters:

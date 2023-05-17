@@ -9,7 +9,7 @@ plan:
     - id: 0
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: delegate-stx
             parameters:
@@ -19,7 +19,7 @@ plan:
               - none
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2NEB84ASENDXKYGJPQW86YXQCEFEX2ZQPG87ND
             method: delegate-stx
             parameters:
@@ -31,7 +31,7 @@ plan:
     - id: 1
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
             method: delegate-stack-stx
             parameters:
@@ -42,7 +42,7 @@ plan:
               - u1
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
             method: stack-aggregation-commit-indexed
             parameters:
@@ -52,13 +52,13 @@ plan:
     - id: 2
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: revoke-delegate-stx
             parameters: []
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: delegate-stx
             parameters:
@@ -70,7 +70,7 @@ plan:
     - id: 3
       transactions:
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
             method: delegate-stack-increase
             parameters:
@@ -79,7 +79,7 @@ plan:
               - u100000000000
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
             method: delegate-stack-stx
             parameters:
@@ -90,7 +90,7 @@ plan:
               - u1
             cost: 10000
         - contract-call:
-            contract-id: ST000000000000000000002AMW42H.pox-2
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
             method: stack-aggregation-commit-indexed
             parameters:
