@@ -59,7 +59,9 @@
 (define-constant err-too-early (err u500))
 (define-constant err-decrease-forbidden (err u503))
 (define-constant err-pox-address-deactivated (err u504))
-;; Error code 9 is used by pox-3 contract
+;; Error code 3 is used by pox-3 contract for already stacking errors
+(define-constant err-already-stacking (err u603))
+;; Error code 9 is used by pox-3 contract for permission denied errors
 (define-constant err-stacking-permission-denied (err u609))
 ;; Allowed contract-callers handling a user's stacking activity.
 (define-map allowance-contract-callers
@@ -166,8 +168,8 @@
                 ;; do not increase
                 (begin
                   ;; update locked-amounts map if necessary
-                  (and (> unlock-burn-height (get unlock-height status))
-                    (map-extend-locked-amount user unlock-burn-height))
+                  (asserts! (> unlock-burn-height (get unlock-height status)) err-already-stacking)
+                  (map-extend-locked-amount user unlock-burn-height)
                   (ok {lock-amount: locked-amount,
                       stacker: user,
                       unlock-burn-height: unlock-burn-height}))

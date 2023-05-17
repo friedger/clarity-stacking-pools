@@ -46,6 +46,7 @@ Clarinet.test({
     const wallet_1 = accounts.get("wallet_1")!;
     const poxPoolsSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
+    const { CYCLE } = await getCycleLength(chain);
     // current cycle is cycle 0
 
     // delegate 2 stx for cycle 1
@@ -61,7 +62,7 @@ Clarinet.test({
     expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectTotalStackedByCycle(1, 0, undefined, chain, deployer);
 
-    chain.mineEmptyBlock(2100);
+    chain.mineEmptyBlock(CYCLE);
 
     // increase delegation to 3 stx for cycle 2
     block = chain.mineBlock([delegateStx(3_000_000, wallet_1)]);
@@ -97,11 +98,11 @@ Clarinet.test({
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // advance to middle of next cycle
-    block = chain.mineEmptyBlock(2 * CYCLE + HALF_CYCLE - 1);
+    block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 2 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    assertEquals(block.height, 2 * CYCLE + HALF_CYCLE + 2);
     block.receipts[0].result.expectErr().expectUint(FpErrors.TooEarly);
+    assertEquals(block.height, 2 * CYCLE + HALF_CYCLE + 2);
 
     // extend to cycle 2
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
