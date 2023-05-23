@@ -30,6 +30,22 @@ export function delegateStx(amount: number, delegateTo: string, user: Account) {
   );
 }
 
+
+export function delegateStackExtend(stacker: Account,
+  poxAddr: { version: string; hashbytes: string },
+  extendedCount: number, user: Account) {
+  return Tx.contractCall(
+    "ST000000000000000000002AMW42H.pox-3",
+    "delegate-stack-extend",
+    [
+      types.principal(stacker.address),
+      types.tuple(poxAddr),
+      types.uint(extendedCount),
+    ],
+    user.address
+  );
+}
+
 export function stackAggregationCommitIndexed(
   poxAddr: { version: string; hashbytes: string },
   cycle: number,
@@ -125,5 +141,6 @@ export async function getCycleLength(chain: Chain) {
   return {
     CYCLE,
     HALF_CYCLE: CYCLE / 2,
+    PREPARE_CYCLE_LENGTH
   };
 }

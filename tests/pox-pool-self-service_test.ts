@@ -3,7 +3,7 @@ import {
   delegateStackStx,
   delegateStx,
 } from "./client/pox-pool-self-service-client.ts";
-import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
+import { poxAddrFP } from "./constants.ts";
 import { Account, Chain, Clarinet, assertEquals } from "./deps.ts";
 import {
   expectPartialStackedByCycle,
@@ -68,11 +68,10 @@ Clarinet.test({
     block = chain.mineBlock([delegateStx(3_000_000, wallet_1)]);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // therefore, delegate-stack-extend fails with an underflow error
+    // as stx-account unlock-height returns 0.
     // block.receipts[0].result.expectOk().expectUint(3_000_000);
-    block.receipts[0].result
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -101,19 +100,18 @@ Clarinet.test({
     block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 2 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    block.receipts[0].result.expectErr().expectUint(FpErrors.TooEarly);
-    assertEquals(block.height, 2 * CYCLE + HALF_CYCLE + 2);
+    assertEquals(block.receipts.length, 0); // delegate-stack-extend throw ArithmeticUnderFlowError
+    assertEquals(block.height, CYCLE + HALF_CYCLE + 4);
 
     // extend to cycle 2
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // .. therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // .. therefore, delegate-stack-extend fails with an underflow error
+    //  as stx-account unlock height returns 0.
     // block.receipts[0].result.expectOk().expectUint(2_000_000);
-    block.receipts[0].result
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
 
     // .. therefore, partial stacked amount for cycle 2 is none.
     // expectPartialStackedByCycle(poxAddrFP, 2, 2_000_000, chain, deployer);

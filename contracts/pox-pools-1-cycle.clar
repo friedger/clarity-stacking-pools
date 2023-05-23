@@ -104,8 +104,7 @@
 ;; Parameter amount-ustx must be lower or equal the stx balance and the delegated amount
 (define-private (pox-delegate-stack-extend-increase (user principal)
                   (amount-ustx uint)
-                  (pox-address {hashbytes: (buff 32), version: (buff 1)})
-                  (start-burn-ht uint))
+                  (pox-address {hashbytes: (buff 32), version: (buff 1)}))
   (let ((status (stx-account user))
         (locked-amount (get locked status)))
     (asserts! (>= amount-ustx locked-amount) err-decrease-forbidden)
@@ -170,7 +169,7 @@
                                    (map-set-details tx-sender (merge-details stacker-details user-details))
                                    (ok stacker-details))
                 error (if (is-eq error 3) ;; Check whether user is already stacked
-                        (match (pox-delegate-stack-extend-increase user amount-ustx pox-address start-burn-ht)
+                        (match (pox-delegate-stack-extend-increase user amount-ustx pox-address)
                           stacker-details-2 (begin
                                   ;; Store result on success
                                    (map-set-details tx-sender (merge-details stacker-details-2 user-details))

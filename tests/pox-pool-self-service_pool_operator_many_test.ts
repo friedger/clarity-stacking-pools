@@ -1,15 +1,15 @@
 import {
   allowContractCaller,
+  asyncExpectCurrentCycle,
   getCycleLength,
   delegateStx as poxDelegateStx,
-  asyncExpectCurrentCycle,
 } from "./client/pox-3-client.ts";
 import {
   delegateStackStx,
   delegateStackStxMany,
   delegateStx,
 } from "./client/pox-pool-self-service-client.ts";
-import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
+import { poxAddrFP } from "./constants.ts";
 import { Account, Chain, Clarinet, assertEquals } from "./deps.ts";
 import {
   expectPartialStackedByCycle,
@@ -48,13 +48,10 @@ Clarinet.test({
       delegateStackStxMany([wallet_1, wallet_2], deployer),
     ]);
 
-    // problem with simnet
-    block.receipts[0].result
-      .expectOk()
-      .expectList()
-      .map((entry: any) =>
-        entry.expectErr().expectUint(PoxErrors.StackExtendNotLocked * 1000000)
-      );
+    // any call to delegate-stack-extend for a locked user
+    // fails with an underflow error
+    // therefore the many call throws the error
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -88,8 +85,11 @@ Clarinet.test({
     block = chain.mineBlock([
       delegateStackStxMany([wallet_1, wallet_2], deployer),
     ]);
-    const resultList = block.receipts[0].result.expectOk().expectList();
-
+    // any call to delegate-stack-extend for a locked user
+    // fails with an underflow error
+    // therefore the many call throws the error
+    /*
+    block.receipts[0].result.expectOk().expectList();
     resultList[0]
       .expectOk()
       .expectTuple()
@@ -97,6 +97,9 @@ Clarinet.test({
     resultList[1]
       .expectErr()
       .expectUint(PoxErrors.StackExtendNotLocked * 1000000);
+      */
+
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -139,19 +142,11 @@ Clarinet.test({
     ]);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // therefore, delegate-stack-extends fails with an underflow error
+    // as stx-account unlock-height returns 0.
     // block.receipts[0].result.expectOk().expectList()[0].expectOk().expectTuple();
     // block.receipts[1].result.expectOk().expectList()[0].expectOk().expectTuple();
-    block.receipts[0].result
-      .expectOk()
-      .expectList()[0]
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
-    block.receipts[0].result
-      .expectOk()
-      .expectList()[1]
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -165,10 +160,7 @@ Clarinet.test({
       deployer.address + ".pox-pool-self-service";
     const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
 
-    // start in cycle 2 to test stacks-extend
-    let block = chain.mineEmptyBlock(2 * CYCLE);
-
-    block = chain.mineBlock([
+    let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
       delegateStx(2_000_000, wallet_1),
     ]);
@@ -183,19 +175,21 @@ Clarinet.test({
     block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 3 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    assertEquals(block.height, 2 * CYCLE + HALF_CYCLE + 2);
-    block.receipts[0].result.expectErr().expectUint(FpErrors.TooEarly);
+    assertEquals(block.height, CYCLE + HALF_CYCLE + 4);
+    // any call to delegate-stack-extend for a user with locked stx fails
+    // with an underflow error because stx-account returns always 0
+    // for unlock height
+    assertEquals(block.receipts.length, 0);
 
     // extend to cycle 3
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
     expectPartialStackedByCycle(poxAddrFP, 3, undefined, chain, deployer);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // .. therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // .. therefore, delegate-stack-extend for a locked user fails
+    // with an underflow error as stx-account unlock height and locked amount returns 0.
     // block.receipts[0].result.expectOk().expectUint(2_000_000);
-    block.receipts[0].result
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
 
     // .. therefore, partial stacked amount for cycle 3 is none.
     // expectPartialStackedByCycle(poxAddrFP, 3, 2_000_000, chain, deployer);

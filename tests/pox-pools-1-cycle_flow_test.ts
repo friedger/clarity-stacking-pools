@@ -16,7 +16,7 @@ import {
   btcAddrWallet2,
   poxAddrPool1,
 } from "./constants.ts";
-import { Account, Chain, Clarinet, Tx, types } from "./deps.ts";
+import { Account, Chain, Clarinet, Tx, assertEquals, types } from "./deps.ts";
 
 Clarinet.test({
   name: "Ensure that user can delegate and pool operator can lock stx and aggregate commit",
@@ -275,7 +275,9 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
-    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
+    const { CYCLE, HALF_CYCLE, PREPARE_CYCLE_LENGTH } = await getCycleLength(
+      chain
+    );
     const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
@@ -315,6 +317,14 @@ Clarinet.test({
       .expectList()
       .map((r: any) => r.expectOk());
 
+    let info = block.receipts[3].result
+      .expectOk()
+      .expectList()[0]
+      .expectOk()
+      .expectTuple();
+    info["lock-amount"].expectUint(1_000_000);
+    info["unlock-burn-height"].expectUint(2 * CYCLE);
+
     // increase delegation
     block = chain.mineBlock([
       delegateStx(
@@ -328,7 +338,11 @@ Clarinet.test({
     ]);
     block.receipts[0].result.expectOk().expectBool(true);
 
+    chain.mineEmptyBlock(CYCLE - 5);
+
     // try to lock more in same cycle
+    // but simnet always returns a wrong first-reward-cyle (0)
+    // trying to extend fails with underflow error
     block = chain.mineBlock([
       delegateStackStx(
         [
@@ -342,10 +356,30 @@ Clarinet.test({
         deployer
       ),
     ]);
+    assertEquals(block.receipts.length, 0); // Function calls throw ArithmeticUnderFlow error
+
+    // try to lock more at the start of the cycle
+    // with a wrong start height
+    // delegate-stack-stx fails with error !== 3
+    block = chain.mineBlock([
+      delegateStackStx(
+        [
+          {
+            user: wallet_1,
+            amountUstx: 2_000_000,
+          },
+        ],
+        poxAddrPool1,
+        40,
+        deployer
+      ),
+    ]);
+    assertEquals(block.receipts.length, 1);
+
     let lockingInfoList = block.receipts[0].result.expectOk().expectList();
     lockingInfoList[0]
       .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000); // error in pox-delegate-stack-extend
+      .expectUint(PoxErrors.InvalidStartBurnHeight * 1_000); // error in pox-delegate-stack-extend
 
     console.log(
       "*** stx-account",
@@ -357,9 +391,6 @@ Clarinet.test({
       ),
       getStatus(deployer.address, wallet_1.address, chain, wallet_1).result
     );
-
-    // next cycle
-    block = chain.mineEmptyBlock(CYCLE);
 
     // after another cycle all stx are unlocked and can be locked again
     block = chain.mineEmptyBlock(CYCLE);
@@ -386,12 +417,13 @@ Clarinet.test({
         deployer
       ),
     ]);
-    let info = block.receipts[0].result
+    info = block.receipts[0].result
       .expectOk()
       .expectList()[0]
       .expectOk()
       .expectTuple();
     info["lock-amount"].expectUint(2_000_000);
-    info["unlock-burn-height"].expectUint(2 * (CYCLE));
+    // lock started in cycle 3 and unlocks in cycle 4;
+    info["unlock-burn-height"].expectUint(4 * CYCLE);
   },
 });
