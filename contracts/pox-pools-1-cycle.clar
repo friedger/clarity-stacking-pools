@@ -28,6 +28,9 @@
 ;; cycle: cycle id of time of delegation
 (define-map user-data principal {pox-addr: {hashbytes: (buff 32), version: (buff 1)}, cycle: uint})
 
+;; more metadata for each stacker
+(define-map metadata {stacker: principal, key: (string-ascii 8)} (string-ascii 80))
+
 ;; Keep track of stackers grouped by pool and reward-cycle id
 ;; "grouped-stackers-len" returns the number of lists for the given group
 ;; "grouped-stackers" returns the actual list
@@ -196,10 +199,14 @@
 ;; @param user-pox-addr; raw bytes of user's address that should be used for payout of rewards by pool admins.
 (define-public (delegate-stx (amount-ustx uint) (delegate-to principal) (until-burn-ht (optional uint))
                  (pool-pox-addr (optional {hashbytes: (buff 32), version: (buff 1)}))
-                 (user-pox-addr {hashbytes: (buff 32), version: (buff 1)}))
+                 (user-pox-addr {hashbytes: (buff 32), version: (buff 1)})
+                 (user-metadata (optional {keys: (list 30 (string-ascii 8)), values: (list 30 (string-ascii 80))})))
   (begin
     ;; Must be called directly by the tx-sender or by an allowed contract-caller
     (asserts! (check-caller-allowed) err-stacking-permission-denied)
+    (match user-metadata
+      md (map set-metadata-internal (get keys md) (get values md))
+      (list true))
     (map-set user-data tx-sender
       {pox-addr: user-pox-addr, cycle: (contract-call? 'ST000000000000000000002AMW42H.pox-3 current-pox-reward-cycle)})
     (pox-delegate-stx amount-ustx delegate-to until-burn-ht)))
@@ -275,6 +282,29 @@
 ;; than the start of the given reward cycle id.
 (define-read-only (not-locked-for-cycle (unlock-burn-height uint) (cycle uint))
   (< unlock-burn-height (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle)))
+
+;;
+;; Functions to handle metadata
+;;
+
+(define-read-only (get-metadata (key {stacker: principal, key: (string-ascii 8)}))
+  (map-get? metadata key))
+
+(define-read-only (get-metadata-many (keys (list 30 {stacker: principal, key: (string-ascii 8)})))
+  (map get-metadata keys))
+
+(define-public (set-metadata (key (string-ascii 8)) (value (string-ascii 80)))
+  (begin
+    (asserts! (check-caller-allowed) err-stacking-permission-denied)
+    (ok (set-metadata-internal key value))))
+
+(define-public (set-metadata-many (keys (list 30 (string-ascii 8))) (values (list 30 (string-ascii 80))))
+  (begin
+    (asserts! (check-caller-allowed) err-stacking-permission-denied)
+    (ok (map set-metadata-internal keys values))))
+
+(define-private (set-metadata-internal (key (string-ascii 8)) (value (string-ascii 80)))
+  (map-set metadata {stacker: tx-sender, key: key} value))
 
 ;;
 ;; Functions about allowance of delegation/stacking contract calls

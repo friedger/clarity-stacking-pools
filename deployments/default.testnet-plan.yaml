@@ -1,0 +1,32 @@
+---
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: "http://api24.testnet.dev.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: pox-pool-self-service
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 172840
+            path: contracts/pox-pool-self-service.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: pox-pools-1-cycle
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 180330
+            path: contracts/pox-pools-1-cycle.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: helper
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 7630
+            path: contracts/testing/helper.clar
+            anchor-block-only: true
+            clarity-version: 2
+      epoch: "2.4"

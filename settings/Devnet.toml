@@ -125,4 +125,4 @@ epoch_2_2 = 106
 epoch_2_3 = 108
 epoch_2_4 = 112
 
-stacks_node_image_url="blockstack/stacks-blockchain:devnet-2.4.0.0.0e"
+stacks_node_image_url="blockstack/stacks-blockchain:devnet-2.4.0.0.0"

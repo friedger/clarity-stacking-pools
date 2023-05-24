@@ -33,6 +33,7 @@ export function delegateStx(
       untilBurnHt ? types.some(types.uint(untilBurnHt)) : types.none(),
       poolPoxAddr ? types.some(types.tuple(poolPoxAddr)) : types.none(),
       types.tuple(userPoxAddr),
+      types.none()
     ],
     user.address
   );

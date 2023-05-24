@@ -208,7 +208,7 @@ plan:
         - contract-publish:
             contract-name: pox-pools-1-cycle
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 179170
+            cost: 180330
             path: contracts/pox-pools-1-cycle.clar
             anchor-block-only: true
             clarity-version: 2
