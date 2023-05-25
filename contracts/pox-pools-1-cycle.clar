@@ -281,7 +281,7 @@
 ;; Returns true if the given burn chain height is smaller
 ;; than the start of the given reward cycle id.
 (define-read-only (not-locked-for-cycle (unlock-burn-height uint) (cycle uint))
-  (< unlock-burn-height (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle)))
+  (<= unlock-burn-height (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle)))
 
 ;;
 ;; Functions to handle metadata

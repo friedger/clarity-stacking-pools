@@ -296,7 +296,7 @@
   (> burn-block-height (+ (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle) half-cycle-length)))
 
 (define-read-only (not-locked-for-cycle (unlock-burn-height uint) (cycle uint))
-  (< unlock-burn-height (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle)))
+  (<= unlock-burn-height (contract-call? 'ST000000000000000000002AMW42H.pox-3 reward-cycle-to-burn-height cycle)))
 
 ;; Returns minimum
 (define-private (min (amount-1 uint) (amount-2 uint))
