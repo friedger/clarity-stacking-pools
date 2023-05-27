@@ -1,31 +1,31 @@
 ---
 id: 0
-name: Devnet deployment
-network: devnet
-stacks-node: "http://localhost:20443"
-bitcoin-node: "http://devnet:devnet@localhost:18443"
+name: Testnet deployment
+network: testnet
+stacks-node: "https://api24.testnet.dev.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332"
 plan:
   batches:
     - id: 0
       transactions:
         - contract-publish:
             contract-name: pox-pool-self-service
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 180760
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 172840
             path: contracts/pox-pool-self-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: pox-pools-1-cycle
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 198950
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 180330
             path: contracts/pox-pools-1-cycle.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: helper
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 9320
+            expected-sender: ST2PABAF9FTAJYNFZH93XENAJ8FVY99RRM4DF2YCW
+            cost: 7630
             path: contracts/testing/helper.clar
             anchor-block-only: true
             clarity-version: 2

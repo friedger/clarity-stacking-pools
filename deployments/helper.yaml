@@ -29,4 +29,3 @@ plan:
             parameters:
               - u3
             cost: 10000
-      epoch: "2.1"

@@ -1,7 +1,7 @@
 import {
   allowContractCaller,
   stackAggregationCommitIndexed,
-} from "./client/pox-2-client.ts";
+} from "./client/pox-3-client.ts";
 import {
   delegateStackStxSimple,
   delegateStx,

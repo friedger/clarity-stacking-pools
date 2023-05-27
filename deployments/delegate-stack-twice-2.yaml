@@ -10,18 +10,18 @@ plan:
       transactions:
         - contract-call:
             contract-id: ST000000000000000000002AMW42H.pox-3
-            expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
-            method: allow-contract-caller
+            expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
+            method: stack-aggregation-commit-indexed
             parameters:
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pool-self-service"
-              - none
+              - "{version: 0x04, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
+              - u4
             cost: 10000
         - contract-call:
             contract-id: ST000000000000000000002AMW42H.pox-3
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            method: allow-contract-caller
+            expected-sender: ST2JHG361ZXG51QTKY2NQCVBPPRRE2KZB1HR05NNC
+            method: stack-aggregation-commit-indexed
             parameters:
-              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pool-self-service"
-              - none
+              - "{version: 0x04, hashbytes: 0x83ed66860315e334010bbfb76eb3eef887efee0a}"
+              - u4
             cost: 10000
       epoch: "2.1"

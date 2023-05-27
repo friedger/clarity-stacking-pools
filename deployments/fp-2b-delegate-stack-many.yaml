@@ -29,4 +29,3 @@ plan:
             parameters:
               - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
             cost: 10000
-      epoch: "2.1"

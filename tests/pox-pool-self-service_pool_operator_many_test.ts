@@ -1,14 +1,20 @@
-import { allowContractCaller } from "./client/pox-2-client.ts";
 import {
-  delegateStx,
+  allowContractCaller,
+  asyncExpectCurrentCycle,
+  getCycleLength,
+  delegateStx as poxDelegateStx,
+} from "./client/pox-3-client.ts";
+import {
   delegateStackStx,
   delegateStackStxMany,
+  delegateStx,
 } from "./client/pox-pool-self-service-client.ts";
-import { delegateStx as poxDelegateStx } from "./client/pox-2-client.ts";
-import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
-import { expectPartialStackedByCycle } from "./utils.ts";
-import { FpErrors, PoxErrors, poxAddrFP } from "./constants.ts";
-import { expectTotalStackedByCycle } from "./utils.ts";
+import { poxAddrFP } from "./constants.ts";
+import { Account, Chain, Clarinet, assertEquals } from "./deps.ts";
+import {
+  expectPartialStackedByCycle,
+  expectTotalStackedByCycle,
+} from "./utils.ts";
 
 Clarinet.test({
   name: "See that on simnet users can't lock for others",
@@ -18,6 +24,8 @@ Clarinet.test({
     const wallet_2 = accounts.get("wallet_2")!;
     const poxPoolsSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
+    chain.mineEmptyBlock(2 * CYCLE);
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
@@ -31,22 +39,25 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
     // check delegation calls
-    block.receipts[2].result.expectOk().expectBool(true);
-    block.receipts[3].result.expectOk().expectBool(true);
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
+    block.receipts[3].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
 
-    chain.mineEmptyBlock(1050);
+    chain.mineEmptyBlock(HALF_CYCLE);
 
     block = chain.mineBlock([
       delegateStackStxMany([wallet_1, wallet_2], deployer),
     ]);
 
-    // problem with simnet
-    block.receipts[0].result
-      .expectOk()
-      .expectList()
-      .map((entry: any) =>
-        entry.expectErr().expectUint(PoxErrors.StackExtendNotLocked * 1000000)
-      );
+    // any call to delegate-stack-extend for a locked user
+    // fails with an underflow error
+    // therefore the many call throws the error
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -58,6 +69,8 @@ Clarinet.test({
     const wallet_2 = accounts.get("wallet_2")!;
     const poxPoolSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
+    chain.mineEmptyBlock(2 * CYCLE);
 
     let block = chain.mineBlock([
       //no allow call for wallet_1
@@ -71,20 +84,31 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     // check delegation calls
     block.receipts[1].result.expectOk().expectBool(true);
-    block.receipts[2].result.expectOk().expectBool(false); // no aggregation
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false); // no aggregation
 
-    chain.mineEmptyBlock(1050);
+    chain.mineEmptyBlock(HALF_CYCLE);
 
     block = chain.mineBlock([
       delegateStackStxMany([wallet_1, wallet_2], deployer),
     ]);
-    const resultList = block.receipts[0].result.expectOk().expectList();
-
+    // any call to delegate-stack-extend for a locked user
+    // fails with an underflow error
+    // therefore the many call throws the error
+    /*
+    block.receipts[0].result.expectOk().expectList();
     resultList[0]
       .expectOk()
       .expectTuple()
       ["lock-amount"].expectUint(19999999000000);
-    resultList[1].expectErr().expectUint(PoxErrors.StackExtendNotLocked * 1000000);
+    resultList[1]
+      .expectErr()
+      .expectUint(PoxErrors.StackExtendNotLocked * 1000000);
+      */
+
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -94,12 +118,16 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
 
     const poxPoolsSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
-    // current cycle is cycle 0
 
-    // delegate 2 stx for cycle 1
+    chain.mineEmptyBlock(CYCLE);
+    // current cycle is cycle 1
+    await asyncExpectCurrentCycle(chain, 1);
+
+    // delegate 20 stx for cycle 2
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_2),
@@ -109,33 +137,31 @@ Clarinet.test({
 
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
-    block.receipts[2].result.expectOk().expectBool(false);
-    block.receipts[3].result.expectOk().expectBool(false);
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
+    block.receipts[3].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
 
-    expectPartialStackedByCycle(poxAddrFP, 1, 38_000_000, chain, deployer);
-    expectTotalStackedByCycle(1, 0, undefined, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 2, 38_000_000, chain, deployer);
+    expectTotalStackedByCycle(2, 0, undefined, chain, deployer);
 
-    chain.mineEmptyBlock(3200);
+    chain.mineEmptyBlock(CYCLE + HALF_CYCLE + 1);
 
-    // increase delegation to 3 stx for cycle 2
+    // increase delegation to 3 stx for cycle 3
     block = chain.mineBlock([
       delegateStackStxMany([wallet_1, wallet_2], deployer),
     ]);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // therefore, delegate-stack-extends fails with an underflow error
+    // as stx-account unlock-height returns 0.
     // block.receipts[0].result.expectOk().expectList()[0].expectOk().expectTuple();
     // block.receipts[1].result.expectOk().expectList()[0].expectOk().expectTuple();
-    block.receipts[0].result
-      .expectOk()
-      .expectList()[0]
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
-    block.receipts[0].result
-      .expectOk()
-      .expectList()[1]
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
   },
 });
 
@@ -147,6 +173,7 @@ Clarinet.test({
     const wallet_2 = accounts.get("wallet_2")!;
     const poxPoolsSelfServiceContract =
       deployer.address + ".pox-pool-self-service";
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
 
     let block = chain.mineBlock([
       allowContractCaller(poxPoolsSelfServiceContract, undefined, wallet_1),
@@ -154,31 +181,37 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(false);
+    block.receipts[1].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
 
     expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
 
     // advance to middle of next cycle
-    block = chain.mineEmptyBlock(3149);
-    // try to extend to cycle 2 early
+    block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
+    // try to extend to cycle 3 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    assertEquals(block.height, 3152);
-    block.receipts[0].result.expectErr().expectUint(FpErrors.TooEarly);
+    assertEquals(block.height, CYCLE + HALF_CYCLE + 2);
+    // any call to delegate-stack-extend for a user with locked stx fails
+    // with an underflow error because stx-account returns always 0
+    // for unlock height
+    assertEquals(block.receipts.length, 1);
+    block.receipts[0].result.expectErr().expectUint(500); // too early
 
-    // extend to cycle 2
+    // extend to cycle 3
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 3, undefined, chain, deployer);
 
     // support for simnet is limited, in particular stx-account returns other values
-    // .. therefore, delegate-stack-stx fails as stx-account locked amount returns 0.
+    // .. therefore, delegate-stack-extend for a locked user fails
+    // with an underflow error as stx-account unlock height and locked amount returns 0.
     // block.receipts[0].result.expectOk().expectUint(2_000_000);
-    block.receipts[0].result
-      .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000);
+    assertEquals(block.receipts.length, 0);
 
-    // .. therefore, partial stacked amount for cycle 2 is none.
-    // expectPartialStackedByCycle(poxAddrFP, 2, 2_000_000, chain, deployer);
-    expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
+    // .. therefore, partial stacked amount for cycle 3 is none.
+    // expectPartialStackedByCycle(poxAddrFP, 3, 2_000_000, chain, deployer);
+    expectPartialStackedByCycle(poxAddrFP, 3, undefined, chain, deployer);
   },
 });

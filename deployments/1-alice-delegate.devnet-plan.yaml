@@ -9,11 +9,16 @@ plan:
     - id: 0
       transactions:
         - contract-call:
-            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pool-self-service
+            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pools-1-cycle
             expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
             method: delegate-stx
             parameters:
-              - u90000000000000
+              - u220000000000000
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+              - none
+              - none
+              - "{version: 0x00, hashbytes: 0x6d78de7b0625dfbfc16c3a8a5735f6dc3dc3f2ce}"
+              - none
             cost: 10000
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper

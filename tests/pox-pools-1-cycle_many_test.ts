@@ -1,25 +1,26 @@
+import { hexToBytes } from "https://esm.sh/@stacks/common";
 import {
   allowContractCaller,
+  getCycleLength,
   stackAggregationCommitIndexed,
   stackAggregationIncrease,
-} from "./client/pox-2-client.ts";
+} from "./client/pox-3-client.ts";
 import {
   delegateStackStx,
   delegateStx,
+  getStatus,
   getStatusList,
   getStatusListsLastIndex,
-  getStatus,
 } from "./client/pox-pools-1-cycle-client.ts";
-import { Clarinet, Chain, Account, assertEquals } from "./deps.ts";
 import {
   btcAddrWallet1,
   btcAddrWallet2,
   poxAddrPool1,
   poxAddrPool2,
 } from "./constants.ts";
-import { hexToBytes } from "https://esm.sh/@stacks/common";
+import { Account, Chain, Clarinet } from "./deps.ts";
 
-function delegateAndDelegateStx(
+async function delegateAndDelegateStx(
   chain: Chain,
   accounts: Map<string, Account>,
   { samePoxAddr }: { samePoxAddr: boolean }
@@ -29,6 +30,7 @@ function delegateAndDelegateStx(
   let wallet_2 = accounts.get("wallet_2")!;
   let pool_1 = accounts.get("wallet_7")!;
   let pool_2 = accounts.get("wallet_8")!;
+  const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
   const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
   let block = chain.mineBlock([
@@ -96,13 +98,13 @@ function delegateAndDelegateStx(
   lockingInfoList[0]
     .expectOk()
     .expectTuple()
-    ["unlock-burn-height"].expectUint(4200);
+    ["unlock-burn-height"].expectUint(2 * CYCLE);
 
   lockingInfoList = block.receipts[7].result.expectOk().expectList();
   lockingInfoList[0]
     .expectOk()
     .expectTuple()
-    ["unlock-burn-height"].expectUint(4200);
+    ["unlock-burn-height"].expectUint(2 * CYCLE);
 }
 
 Clarinet.test({
@@ -114,7 +116,7 @@ Clarinet.test({
     let pool_1 = accounts.get("wallet_7")!;
     let pool_2 = accounts.get("wallet_8")!;
 
-    delegateAndDelegateStx(chain, accounts, { samePoxAddr: true });
+    await delegateAndDelegateStx(chain, accounts, { samePoxAddr: true });
 
     // commit for cycle 1
     let block = chain.mineBlock([
@@ -180,7 +182,7 @@ Clarinet.test({
     let pool_1 = accounts.get("wallet_7")!;
     let pool_2 = accounts.get("wallet_8")!;
 
-    delegateAndDelegateStx(chain, accounts, { samePoxAddr: false });
+    await delegateAndDelegateStx(chain, accounts, { samePoxAddr: false });
 
     // commit for cycle 1
     let block = chain.mineBlock([

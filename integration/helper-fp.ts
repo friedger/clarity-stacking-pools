@@ -1,23 +1,13 @@
+import { StacksNetwork } from "@stacks/network";
 import {
   AnchorMode,
-  bufferCV,
-  ClarityValue,
-  listCV,
-  noneCV,
   PostConditionMode,
   principalCV,
-  standardPrincipalCV,
-  tupleCV,
-  uintCV,
+  uintCV
 } from "@stacks/transactions";
-import { StacksNetwork } from "@stacks/network";
-import {  Accounts } from "./constants";
 import {
-  HelperContract,
-  poxPoolsSelfServiceContract,
+  PoxPoolSelfServiceContract
 } from "./contracts";
-import { decodeBtcAddress } from "@stacks/stacking";
-import { toBytes } from "@stacks/common";
 import { handleContractCall } from "./helpers";
 
 export async function broadcastDelegateStx({
@@ -32,15 +22,15 @@ export async function broadcastDelegateStx({
   user: {stxAddress:string, secretKey: string};
 }) {
   let txOptions = {
-    contractAddress: poxPoolsSelfServiceContract.address,
-    contractName: poxPoolsSelfServiceContract.name,
-    functionName: poxPoolsSelfServiceContract.Functions.DelegateStx.name,
-    functionArgs: poxPoolsSelfServiceContract.Functions.DelegateStx.args({
+    contractAddress: PoxPoolSelfServiceContract.address,
+    contractName: PoxPoolSelfServiceContract.name,
+    functionName: PoxPoolSelfServiceContract.Functions.DelegateStx.name,
+    functionArgs: PoxPoolSelfServiceContract.Functions.DelegateStx.args({
       amountUstx: uintCV(amountUstx),
     }),
     nonce,
     network,
-    anchorMode: AnchorMode.OnChainOnly,
+    anchorMode: AnchorMode.Any,
     postConditionMode: PostConditionMode.Allow,
     senderKey: user.secretKey,
   };
@@ -49,28 +39,25 @@ export async function broadcastDelegateStx({
 
 export async function broadcastDelegateStackStx({
   stacker,
-  amountUstx,
   user,
   nonce,
   network,
 }: {
   stacker: {stxAddress:string, secretKey: string};
-  amountUstx: number;
   user: {stxAddress:string, secretKey: string};
   nonce: number;
   network: StacksNetwork;
 }) {
   let txOptions = {
-    contractAddress: poxPoolsSelfServiceContract.address,
-    contractName: poxPoolsSelfServiceContract.name,
-    functionName: poxPoolsSelfServiceContract.Functions.DelegateStackStx.name,
-    functionArgs: poxPoolsSelfServiceContract.Functions.DelegateStackStx.args({
+    contractAddress: PoxPoolSelfServiceContract.address,
+    contractName: PoxPoolSelfServiceContract.name,
+    functionName: PoxPoolSelfServiceContract.Functions.DelegateStackStx.name,
+    functionArgs: PoxPoolSelfServiceContract.Functions.DelegateStackStx.args({
       user: principalCV(stacker.stxAddress),
-      amountUstx: uintCV(amountUstx),
     }),
     nonce,
     network,
-    anchorMode: AnchorMode.OnChainOnly,
+    anchorMode: AnchorMode.Any,
     postConditionMode: PostConditionMode.Allow,
     senderKey: user.secretKey,
   };

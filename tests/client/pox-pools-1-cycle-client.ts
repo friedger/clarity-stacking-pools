@@ -33,6 +33,7 @@ export function delegateStx(
       untilBurnHt ? types.some(types.uint(untilBurnHt)) : types.none(),
       poolPoxAddr ? types.some(types.tuple(poolPoxAddr)) : types.none(),
       types.tuple(userPoxAddr),
+      types.none(),
     ],
     user.address
   );
@@ -90,10 +91,7 @@ export function getStatusListsLastIndex(
   return chain.callReadOnlyFn(
     "pox-pools-1-cycle",
     "get-status-lists-last-index",
-    [
-      types.principal(poolAddress),
-      types.uint(cycle),
-    ],
+    [types.principal(poolAddress), types.uint(cycle)],
     user.address
   );
 }
@@ -108,11 +106,7 @@ export function getStatusList(
   return chain.callReadOnlyFn(
     "pox-pools-1-cycle",
     "get-status-list",
-    [
-      types.principal(poolAddress),
-      types.uint(cycle),
-      types.uint(index),
-    ],
+    [types.principal(poolAddress), types.uint(cycle), types.uint(index)],
     user.address
   );
 }
@@ -126,10 +120,7 @@ export function getTotal(
   return chain.callReadOnlyFn(
     "pox-pools-1-cycle",
     "get-total",
-    [
-      types.principal(poolAddress),
-      types.uint(cycle),
-    ],
+    [types.principal(poolAddress), types.uint(cycle)],
     user.address
   );
 }
@@ -153,6 +144,20 @@ export function getUserData(userAddress: string, chain: Chain, user: Account) {
     "pox-pools-1-cycle",
     "get-user-data",
     [types.principal(userAddress)],
+    user.address
+  );
+}
+
+export function getNotLockedForCycle(
+  unlockHeight: number,
+  cycleId: number,
+  chain: Chain,
+  user: Account
+) {
+  return chain.callReadOnlyFn(
+    "pox-pools-1-cycle",
+    "not-locked-for-cycle",
+    [types.uint(unlockHeight), types.uint(cycleId)],
     user.address
   );
 }

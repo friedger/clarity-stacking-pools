@@ -1,21 +1,22 @@
 import {
   allowContractCaller,
-  stackAggregationCommitIndexed,
+  getCycleLength,
   revokeDelegateStx,
-} from "./client/pox-2-client.ts";
+  stackAggregationCommitIndexed,
+} from "./client/pox-3-client.ts";
 import {
   delegateStackStx,
   delegateStx,
   getStatus,
 } from "./client/pox-pools-1-cycle-client.ts";
-import { Clarinet, Tx, Chain, Account, types } from "./deps.ts";
 import {
+  Errors,
+  PoxErrors,
   btcAddrWallet1,
   btcAddrWallet2,
   poxAddrPool1,
-  PoxErrors,
-  Errors,
 } from "./constants.ts";
+import { Account, Chain, Clarinet, Tx, assertEquals, types } from "./deps.ts";
 
 Clarinet.test({
   name: "Ensure that user can delegate and pool operator can lock stx and aggregate commit",
@@ -23,6 +24,7 @@ Clarinet.test({
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
     let wallet_2 = accounts.get("wallet_2")!;
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
     const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
@@ -78,12 +80,12 @@ Clarinet.test({
     lockingInfoList[0]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(4200);
+      ["unlock-burn-height"].expectUint(2 * CYCLE);
 
     lockingInfoList[1]
       .expectOk()
       .expectTuple()
-      ["unlock-burn-height"].expectUint(4200);
+      ["unlock-burn-height"].expectUint(2 * CYCLE);
 
     // commit for cycle 1
     block = chain.mineBlock([
@@ -101,6 +103,7 @@ Clarinet.test({
     let wallet_1 = accounts.get("wallet_1")!;
     let wallet_2 = accounts.get("wallet_2")!;
     let faucet = accounts.get("faucet")!;
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
     const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
@@ -111,7 +114,7 @@ Clarinet.test({
       delegateStx(
         1_000_000,
         deployer.address,
-        4200,
+        2 * CYCLE,
         undefined,
         btcAddrWallet1,
         wallet_1
@@ -165,7 +168,7 @@ Clarinet.test({
     lockingInfoList[0].expectErr().expectUint(Errors.NonPositiveAmount);
 
     let info = lockingInfoList[1].expectOk().expectTuple();
-    info["unlock-burn-height"].expectUint(4200);
+    info["unlock-burn-height"].expectUint(2 * CYCLE);
 
     // try again after loading wallet_1 with STX
     block = chain.mineBlock([
@@ -198,6 +201,7 @@ Clarinet.test({
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
     let wallet_2 = accounts.get("wallet_2")!;
+    const { CYCLE, HALF_CYCLE } = await getCycleLength(chain);
     const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
@@ -208,7 +212,7 @@ Clarinet.test({
       delegateStx(
         1_000_000,
         deployer.address,
-        4200,
+        2 * CYCLE,
         undefined,
         btcAddrWallet1,
         wallet_1
@@ -257,10 +261,12 @@ Clarinet.test({
 
     // verify delegate-stack-stx call by pool operator
     let lockingInfoList = block.receipts[0].result.expectOk().expectList();
-    lockingInfoList[0].expectErr().expectUint(PoxErrors.StackingPermissionDenied * 1000);
+    lockingInfoList[0]
+      .expectErr()
+      .expectUint(PoxErrors.StackingPermissionDenied * 1000);
 
     let info = lockingInfoList[1].expectOk().expectTuple();
-    info["unlock-burn-height"].expectUint(4200);
+    info["unlock-burn-height"].expectUint(2 * CYCLE);
   },
 });
 
@@ -269,6 +275,9 @@ Clarinet.test({
   async fn(chain: Chain, accounts: Map<string, Account>) {
     let deployer = accounts.get("deployer")!;
     let wallet_1 = accounts.get("wallet_1")!;
+    const { CYCLE, HALF_CYCLE, PREPARE_CYCLE_LENGTH } = await getCycleLength(
+      chain
+    );
     const poxPools1CycleContract = deployer.address + ".pox-pools-1-cycle";
 
     let block = chain.mineBlock([
@@ -292,7 +301,7 @@ Clarinet.test({
           },
         ],
         poxAddrPool1,
-        40,
+        20,
         deployer
       ),
     ]);
@@ -308,6 +317,14 @@ Clarinet.test({
       .expectList()
       .map((r: any) => r.expectOk());
 
+    let info = block.receipts[3].result
+      .expectOk()
+      .expectList()[0]
+      .expectOk()
+      .expectTuple();
+    info["lock-amount"].expectUint(1_000_000);
+    info["unlock-burn-height"].expectUint(2 * CYCLE);
+
     // increase delegation
     block = chain.mineBlock([
       delegateStx(
@@ -321,7 +338,11 @@ Clarinet.test({
     ]);
     block.receipts[0].result.expectOk().expectBool(true);
 
+    chain.mineEmptyBlock(CYCLE - 3);
+
     // try to lock more in same cycle
+    // but simnet always returns a wrong first-reward-cyle (0)
+    // trying to extend fails with underflow error
     block = chain.mineBlock([
       delegateStackStx(
         [
@@ -335,10 +356,30 @@ Clarinet.test({
         deployer
       ),
     ]);
+    assertEquals(block.receipts.length, 0); // Function calls throw ArithmeticUnderFlow error
+
+    // try to lock more at the start of the cycle
+    // with a wrong start height
+    // delegate-stack-stx fails with error !== 3
+    block = chain.mineBlock([
+      delegateStackStx(
+        [
+          {
+            user: wallet_1,
+            amountUstx: 2_000_000,
+          },
+        ],
+        poxAddrPool1,
+        40,
+        deployer
+      ),
+    ]);
+    assertEquals(block.receipts.length, 1);
+
     let lockingInfoList = block.receipts[0].result.expectOk().expectList();
     lockingInfoList[0]
       .expectErr()
-      .expectUint(PoxErrors.StackExtendNotLocked * 1_000_000); // error in pox-delegate-stack-extend
+      .expectUint(PoxErrors.InvalidStartBurnHeight * 1_000); // error in pox-delegate-stack-extend
 
     console.log(
       "*** stx-account",
@@ -351,11 +392,8 @@ Clarinet.test({
       getStatus(deployer.address, wallet_1.address, chain, wallet_1).result
     );
 
-    // next cycle
-    block = chain.mineEmptyBlock(2100);
-
     // after another cycle all stx are unlocked and can be locked again
-    block = chain.mineEmptyBlock(2100);
+    block = chain.mineEmptyBlock(CYCLE);
 
     // user does not stack anymore
     const response = getStatus(
@@ -379,12 +417,13 @@ Clarinet.test({
         deployer
       ),
     ]);
-    let info = block.receipts[0].result
+    info = block.receipts[0].result
       .expectOk()
       .expectList()[0]
       .expectOk()
       .expectTuple();
     info["lock-amount"].expectUint(2_000_000);
-    info["unlock-burn-height"].expectUint(8400);
+    // lock started in cycle 3 and unlocks in cycle 4;
+    info["unlock-burn-height"].expectUint(4 * CYCLE);
   },
 });

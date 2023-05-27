@@ -9,23 +9,29 @@ plan:
     - id: 0
       transactions:
         - contract-call:
-            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pool-self-service
-            expected-sender: ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5
-            method: delegate-stx
+            contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            method: get-status
             parameters:
-              - u90000000000000
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+              - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
+              - u1
             cost: 10000
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            method: get-user-data
+            method: get-status
             parameters:
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
               - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
+              - u2
             cost: 10000
         - contract-call:
             contract-id: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.helper
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            method: get-stx-account
+            method: get-status
             parameters:
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
               - "'ST1SJ3DTE5DN7X54YDH5D64R3BCB6A2AG2ZQ8YPD5"
+              - u3
             cost: 10000

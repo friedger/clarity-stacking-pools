@@ -1,12 +1,12 @@
-import { Accounts, Contracts } from "./constants";
+import { Accounts, Contracts, DEFAULT_FEE } from "./constants";
 import {
   StacksBlockMetadata,
   StacksChainUpdate,
   DevnetNetworkOrchestrator,
   StacksTransactionMetadata,
-  getIsolatedNetworkConfigUsingNetworkId
+  getIsolatedNetworkConfigUsingNetworkId,
 } from "@hirosystems/stacks-devnet-js";
-import { StacksNetwork } from "@stacks/network";
+import { StacksNetwork, StacksTestnet } from "@stacks/network";
 import {
   AnchorMode,
   broadcastTransaction,
@@ -22,7 +22,8 @@ import {
   TxBroadcastResult,
   uintCV,
   callReadOnlyFunction,
-  cvToJSON
+  cvToJSON,
+  makeContractDeploy,
 } from "@stacks/transactions";
 import { Constants } from "./constants";
 
@@ -37,11 +38,18 @@ interface Account {
   secretKey: string;
 }
 
-interface EpochTimeline {
-  epoch_2_0: number;
-  epoch_2_05: number;
-  epoch_2_1: number;
-  pox_2_activation: number;
+export interface EpochTimeline {
+  epoch_2_0?: number;
+  epoch_2_05?: number;
+  epoch_2_1?: number;
+  pox_2_activation?: number;
+  epoch_2_2?: number;
+  epoch_2_3?: number;
+  epoch_2_4?: number;
+}
+
+export interface Epoch24Timeline extends EpochTimeline {
+  epoch_2_4: number;
 }
 
 export const DEFAULT_EPOCH_TIMELINE = {
@@ -49,25 +57,100 @@ export const DEFAULT_EPOCH_TIMELINE = {
   epoch_2_05: Constants.DEVNET_DEFAULT_EPOCH_2_05,
   epoch_2_1: Constants.DEVNET_DEFAULT_EPOCH_2_1,
   pox_2_activation: Constants.DEVNET_DEFAULT_POX_2_ACTIVATION,
+  epoch_2_2: Constants.DEVNET_DEFAULT_EPOCH_2_2,
+  epoch_2_3: Constants.DEVNET_DEFAULT_EPOCH_2_3,
+  epoch_2_4: Constants.DEVNET_DEFAULT_EPOCH_2_4,
 };
 
+export const FAST_FORWARD_TO_EPOCH_2_4 = {
+  epoch_2_0: 100,
+  epoch_2_05: 102,
+  epoch_2_1: 104,
+  pox_2_activation: 105,
+  epoch_2_2: 106,
+  epoch_2_3: 108,
+  epoch_2_4: 112,
+};
+
+export const POX_CYCLE_LENGTH = 10;
+
 const delay = () => new Promise((resolve) => setTimeout(resolve, 3000));
+
+/// This function will fill in any missing epoch values in the timeline
+/// with reasonable block heights.
+function fillTimeline(timeline: EpochTimeline) {
+  if (timeline.epoch_2_0 === undefined) {
+    timeline.epoch_2_0 = DEFAULT_EPOCH_TIMELINE.epoch_2_0;
+  }
+  if (timeline.epoch_2_05 === undefined) {
+    timeline.epoch_2_05 = DEFAULT_EPOCH_TIMELINE.epoch_2_05;
+    while (timeline.epoch_2_05 <= timeline.epoch_2_0) {
+      timeline.epoch_2_05 += POX_CYCLE_LENGTH;
+    }
+  }
+  if (timeline.epoch_2_1 === undefined) {
+    timeline.epoch_2_1 = DEFAULT_EPOCH_TIMELINE.epoch_2_1;
+    while (timeline.epoch_2_1 <= timeline.epoch_2_05) {
+      timeline.epoch_2_1 += POX_CYCLE_LENGTH;
+    }
+  }
+  if (timeline.pox_2_activation === undefined) {
+    timeline.pox_2_activation = timeline.epoch_2_1 + 1;
+  }
+  if (timeline.epoch_2_2 === undefined) {
+    timeline.epoch_2_2 = DEFAULT_EPOCH_TIMELINE.epoch_2_2;
+    while (timeline.epoch_2_2 <= timeline.pox_2_activation) {
+      timeline.epoch_2_2 += POX_CYCLE_LENGTH;
+    }
+  }
+  if (timeline.epoch_2_3 === undefined) {
+    timeline.epoch_2_3 = DEFAULT_EPOCH_TIMELINE.epoch_2_3;
+    while (timeline.epoch_2_3 <= timeline.epoch_2_2) {
+      timeline.epoch_2_3 += POX_CYCLE_LENGTH;
+    }
+  }
+  if (timeline.epoch_2_4 === undefined) {
+    timeline.epoch_2_4 = DEFAULT_EPOCH_TIMELINE.epoch_2_4;
+    while (timeline.epoch_2_4 <= timeline.epoch_2_3) {
+      timeline.epoch_2_4 += POX_CYCLE_LENGTH;
+    }
+  }
+  return timeline;
+}
 
 export function buildDevnetNetworkOrchestrator(
   networkId: number,
   timeline: EpochTimeline = DEFAULT_EPOCH_TIMELINE,
-  logs = true
+  logs = false,
+  stacks_node_image_url?: string
 ) {
   let uuid = Date.now();
   let working_dir = `/tmp/stacks-test-${uuid}-${networkId}`;
+  // Fill in default values for any unspecified epochs
+  let full_timeline = fillTimeline(timeline);
+  // Set the stacks-node image URL to the default image for the version if it's
+  // not explicitly set
+  if (stacks_node_image_url === undefined) {
+    stacks_node_image_url = process.env.CUSTOM_STACKS_NODE;
+  }
   let config = {
     logs,
     devnet: {
       name: `ephemeral-devnet-${uuid}`,
       bitcoin_controller_block_time: Constants.BITCOIN_BLOCK_TIME,
+      epoch_2_0: full_timeline.epoch_2_0,
+      epoch_2_05: full_timeline.epoch_2_05,
+      epoch_2_1: full_timeline.epoch_2_1,
+      pox_2_activation: full_timeline.pox_2_activation,
+      epoch_2_2: full_timeline.epoch_2_2,
+      epoch_2_3: full_timeline.epoch_2_3,
+      epoch_2_4: full_timeline.epoch_2_4,
       bitcoin_controller_automining_disabled: false,
       working_dir,
       use_docker_gateway_routing: process.env.GITHUB_ACTIONS ? true : false,
+      ...(stacks_node_image_url !== undefined && {
+        stacks_node_image_url,
+      }),
     },
   };
   let consolidatedConfig = getIsolatedNetworkConfigUsingNetworkId(
@@ -77,7 +160,6 @@ export function buildDevnetNetworkOrchestrator(
   let orchestrator = new DevnetNetworkOrchestrator(consolidatedConfig, 2500);
   return orchestrator;
 }
-
 export const getBitcoinBlockHeight = (
   chainUpdate: StacksChainUpdate
 ): number => {
@@ -235,7 +317,7 @@ export const expectAccountToBe = async (
 
 export async function handleContractCall({
   txOptions,
-  network
+  network,
 }: {
   txOptions: any;
   network: StacksNetwork;
@@ -261,24 +343,22 @@ export const broadcastStackSTX = async (
   fee: number,
   nonce: number
 ): Promise<TxBroadcastResult> => {
-  const { version, data } = decodeBtcAddress(account.btcAddress);
-  // @ts-ignore
-  const address = { version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))), hashbytes: bufferCV(data) };
+  const addressCV = decodeBtcAddressToCV(account.btcAddress);
 
   const txOptions = {
     contractAddress: Contracts.POX_1.address,
-    contractName: poxVersion == 1 ? Contracts.POX_1.name : Contracts.POX_2.name,
+    contractName: poxVersion == 1 ? Contracts.POX_1.name : Contracts.POX_3.name,
     functionName: "stack-stx",
     functionArgs: [
       uintCV(amount),
-      tupleCV(address),
+      addressCV,
       uintCV(blockHeight),
       uintCV(cycles),
     ],
     fee,
     nonce,
     network,
-    anchorMode: AnchorMode.OnChainOnly,
+    anchorMode: AnchorMode.Any,
     postConditionMode: PostConditionMode.Allow,
     senderKey: account.secretKey,
   };
@@ -289,121 +369,51 @@ export const broadcastStackSTX = async (
   return response;
 };
 
-export const createVault = async(
-  collateralAmount: number,
-  usda: number,
+export async function deployContract(
   network: StacksNetwork,
-  account: Account,
-  fee: number,
-  nonce: number
-): Promise<TxBroadcastResult> => {
-  const txOptions = {
-    contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-freddie-v1-1',
-    functionName: "collateralize-and-mint",
-    functionArgs: [
-      uintCV(collateralAmount * 1000000),
-      uintCV(usda * 1000000),
-      tupleCV({
-        'stack-pox': trueCV(),
-        'auto-payoff': falseCV()
-      }),
-      stringAsciiCV('STX-A'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-stx-reserve-v1-1'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-token'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-collateral-types-v3-1'),
-      contractPrincipalCV(Accounts.DEPLOYER.stxAddress, 'arkadiko-oracle-v1-1')
-    ],
-    fee,
-    nonce,
+  sender: Account,
+  nonce: number,
+  contractName: string,
+  codeBody: string
+) {
+  // Build the transaction to deploy the contract
+  let deployTxOptions = {
+    senderKey: sender.secretKey,
+    contractName,
+    codeBody,
+    fee: 10000000,
     network,
-    anchorMode: AnchorMode.OnChainOnly,
+    anchorMode: AnchorMode.Any,
     postConditionMode: PostConditionMode.Allow,
-    senderKey: account.secretKey,
+    nonce,
+    clarityVersion: undefined,
   };
-  // @ts-ignore
-  const tx = await makeContractCall(txOptions);
-  // Broadcast transaction to our Devnet stacks node
-  const result = await broadcastTransaction(tx, network);
-  return result;
+
+  let transaction = await makeContractDeploy(deployTxOptions);
+  let response = await broadcastTransaction(transaction, network);
+  expect(
+    response.error,
+    `${JSON.stringify(response.reason_data)} - ${response.reason}`
+  ).toBeUndefined();
+  return { transaction, response };
 }
 
-export const initiateStacking = async (
-  network: StacksNetwork,
-  account: Account,
-  blockHeight: number,
-  cycles: number,
-  fee: number,
-  nonce: number
-): Promise<TxBroadcastResult> => {
-  const { version, data } = decodeBtcAddress(account.btcAddress);
+export function decodeBtcAddressToCV(btcAddress: string) {
+  const { version, data } = decodeBtcAddress(btcAddress);
   // @ts-ignore
-  const address = { version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))), hashbytes: bufferCV(data) };
-
-  const txOptions = {
-    contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-stacker-v2-1',
-    functionName: "initiate-stacking",
-    functionArgs: [
-      tupleCV(address),
-      uintCV(blockHeight),
-      uintCV(cycles),
-    ],
-    fee,
-    nonce,
-    network,
-    anchorMode: AnchorMode.OnChainOnly,
-    postConditionMode: PostConditionMode.Allow,
-    senderKey: account.secretKey,
+  const address = {
+    version: bufferCV(toBytes(new Uint8Array([version.valueOf()]))),
+    hashbytes: bufferCV(data),
   };
-  // @ts-ignore
-  const tx = await makeContractCall(txOptions);
-  // Broadcast transaction to our Devnet stacks node
-  const result = await broadcastTransaction(tx, network);
-  return result;
-};
+  return tupleCV(address);
+}
 
-export const stackIncrease = async (
-  network: StacksNetwork,
-  account: Account,
-  stackerName: string,
-  fee: number,
-  nonce: number
-): Promise<TxBroadcastResult> => {
-  const txOptions = {
-    contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: 'arkadiko-stacker-v2-1',
-    functionName: "stack-increase",
-    functionArgs: [
-      stringAsciiCV(stackerName)
-    ],
-    fee,
-    nonce,
-    network,
-    anchorMode: AnchorMode.OnChainOnly,
-    postConditionMode: PostConditionMode.Allow,
-    senderKey: account.secretKey,
-  };
-  // @ts-ignore
-  const tx = await makeContractCall(txOptions);
-  // Broadcast transaction to our Devnet stacks node
-  const result = await broadcastTransaction(tx, network);
-  return result;
-};
 
-export const getStackerInfo = async (
-  network: StacksNetwork
-) => {
-  const supplyCall = await callReadOnlyFunction({
-    contractAddress: Accounts.DEPLOYER.stxAddress,
-    contractName: "arkadiko-stacker-v2-1",
-    functionName: "get-stacker-info",
-    functionArgs: [],
-    senderAddress: Accounts.DEPLOYER.stxAddress,
-    network: network,
-  });
-  const json = cvToJSON(supplyCall);
-  console.log('STACKER INFO JSON:', json);
-
-  return json;
+export async function asyncExpectCurrentCycleIdToBe(
+  cycleId: number,
+  network: StacksTestnet
+) {
+  let poxInfo = await getPoxInfo(network);
+  console.log("PoxInfo", poxInfo);
+  expect(poxInfo.current_cycle.id).toBe(cycleId);
 }

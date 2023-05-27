@@ -11,22 +11,22 @@ plan:
         - contract-publish:
             contract-name: pox-pool-self-service
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 180760
+            cost: 171110
             path: contracts/pox-pool-self-service.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: pox-pools-1-cycle
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 198950
+            cost: 163520
             path: contracts/pox-pools-1-cycle.clar
             anchor-block-only: true
             clarity-version: 2
         - contract-publish:
             contract-name: helper
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 9320
+            cost: 7630
             path: contracts/testing/helper.clar
             anchor-block-only: true
             clarity-version: 2
-      epoch: "2.4"
+      epoch: "2.1"

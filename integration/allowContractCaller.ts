@@ -1,3 +1,4 @@
+import { StacksTestnet } from "@stacks/network";
 import {
   AnchorMode,
   broadcastTransaction,
@@ -6,10 +7,9 @@ import {
   noneCV,
   PostConditionMode,
 } from "@stacks/transactions";
-import { poxPools1CycleContract } from "./contracts";
-import { StacksTestnet } from "@stacks/network";
+import { PoxPools1CycleContract, PoxPoolSelfServiceContract } from "./contracts";
 
-export async function broadcastAllowContractCallerContracCall({
+export async function broadcastAllowContractCallerContracCallPool1Cycle({
   senderKey,
   network,
   nonce,
@@ -20,18 +20,50 @@ export async function broadcastAllowContractCallerContracCall({
 }) {
   let txOptions = {
     contractAddress: "ST000000000000000000002AMW42H",
-    contractName: "pox-2",
+    contractName: "pox-3",
     functionName: "allow-contract-caller",
     functionArgs: [
       contractPrincipalCV(
-        poxPools1CycleContract.address,
-        poxPools1CycleContract.name
+        PoxPools1CycleContract.address,
+        PoxPools1CycleContract.name
       ),
       noneCV(),
     ],
     network,
     nonce,
-    anchorMode: AnchorMode.OnChainOnly,
+    anchorMode: AnchorMode.Any,
+    postConditionMode: PostConditionMode.Allow,
+    senderKey,
+  };
+  // @ts-ignore
+  let tx = await makeContractCall(txOptions);
+  // Broadcast transaction to our Devnet stacks node
+  return broadcastTransaction(tx, network);
+}
+
+export async function broadcastAllowContractCallerContracCallFP({
+  senderKey,
+  network,
+  nonce,
+}: {
+  senderKey: string;
+  network: StacksTestnet;
+  nonce: number;
+}) {
+  let txOptions = {
+    contractAddress: "ST000000000000000000002AMW42H",
+    contractName: "pox-3",
+    functionName: "allow-contract-caller",
+    functionArgs: [
+      contractPrincipalCV(
+        PoxPoolSelfServiceContract.address,
+        PoxPoolSelfServiceContract.name
+      ),
+      noneCV(),
+    ],
+    network,
+    nonce,
+    anchorMode: AnchorMode.Any,
     postConditionMode: PostConditionMode.Allow,
     senderKey,
   };
