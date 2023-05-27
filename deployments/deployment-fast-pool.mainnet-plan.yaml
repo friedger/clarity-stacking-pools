@@ -2,17 +2,16 @@
 id: 0
 name: Mainnet deployment
 network: mainnet
-stacks-node: "https://stacks-node-api.mainnet.stacks.co"
+stacks-node: "https://api.hiro.so"
 bitcoin-node: "http://blockstack:blockstacksystem@bitcoin.blockstack.com:8332"
 plan:
   batches:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: pox-fast-pool-v1
+            contract-name: pox-fast-pool-v2
             expected-sender: SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP
-            cost: 150920
+            cost: 180760
             path: contracts/pox-pool-self-service.clar
             anchor-block-only: true
             clarity-version: 2
-      epoch: "2.1"

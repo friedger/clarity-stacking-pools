@@ -338,7 +338,7 @@ Clarinet.test({
     ]);
     block.receipts[0].result.expectOk().expectBool(true);
 
-    chain.mineEmptyBlock(CYCLE - 5);
+    chain.mineEmptyBlock(CYCLE - 3);
 
     // try to lock more in same cycle
     // but simnet always returns a wrong first-reward-cyle (0)

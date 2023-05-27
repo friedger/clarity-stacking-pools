@@ -31,8 +31,14 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
     // check delegation calls
-    block.receipts[2].result.expectOk().expectBool(true);
-    block.receipts[3].result.expectOk().expectBool(true);
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
+    block.receipts[3].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
 
     expectPartialStackedByCycle(poxAddrFP, 1, undefined, chain, deployer);
     expectTotalStackedByCycle(1, 0, 20_000_000_100_100, chain, deployer);
@@ -56,7 +62,10 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(false);
+    block.receipts[1].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
     console.log(block.receipts[1].events);
 
     expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
@@ -91,7 +100,10 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(false);
+    block.receipts[1].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
 
     expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
@@ -100,8 +112,9 @@ Clarinet.test({
     block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 2 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    assertEquals(block.receipts.length, 0); // delegate-stack-extend throw ArithmeticUnderFlowError
-    assertEquals(block.height, CYCLE + HALF_CYCLE + 4);
+    assertEquals(block.receipts.length, 1);
+    block.receipts[0].result.expectErr().expectUint(500); // too early
+    assertEquals(block.height, CYCLE + HALF_CYCLE + 2);
 
     // extend to cycle 2
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);

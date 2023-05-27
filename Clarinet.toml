@@ -5,18 +5,6 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 
-[[project.requirements]]
-contract_id="ST000000000000000000002AMW42H.pox-3"
-
-[[project.requirements]]
-contract_id="SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.token-wbtc"
-
-[[project.requirements]]
-contract_id="SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.token-wstx"
-
-[[project.requirements]]
-contract_id="SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.swap-helper-v1-03"
-
 [contracts.pox-pools-1-cycle]
 path = 'contracts/pox-pools-1-cycle.clar'
 clarity_version = 2
@@ -32,11 +20,6 @@ path = 'contracts/testing/helper.clar'
 clarity_version = 2
 epoch = 2.4
 
-
-[contracts.payout-self-service]
-path = 'contracts/payout/payout-self-service.clar'
-clarity_version = 2
-epoch = 2.4
 
 [repl.analysis]
 passes = ['check_checker']

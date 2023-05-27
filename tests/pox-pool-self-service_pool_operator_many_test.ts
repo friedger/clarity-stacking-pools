@@ -39,8 +39,14 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
     // check delegation calls
-    block.receipts[2].result.expectOk().expectBool(true);
-    block.receipts[3].result.expectOk().expectBool(true);
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
+    block.receipts[3].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
 
     chain.mineEmptyBlock(HALF_CYCLE);
 
@@ -78,7 +84,10 @@ Clarinet.test({
     block.receipts[0].result.expectOk().expectBool(true);
     // check delegation calls
     block.receipts[1].result.expectOk().expectBool(true);
-    block.receipts[2].result.expectOk().expectBool(false); // no aggregation
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false); // no aggregation
 
     chain.mineEmptyBlock(HALF_CYCLE);
 
@@ -128,8 +137,14 @@ Clarinet.test({
 
     block.receipts[0].result.expectOk().expectBool(true);
     block.receipts[1].result.expectOk().expectBool(true);
-    block.receipts[2].result.expectOk().expectBool(false);
-    block.receipts[3].result.expectOk().expectBool(false);
+    block.receipts[2].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
+    block.receipts[3].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
 
     expectPartialStackedByCycle(poxAddrFP, 2, 38_000_000, chain, deployer);
     expectTotalStackedByCycle(2, 0, undefined, chain, deployer);
@@ -166,7 +181,10 @@ Clarinet.test({
     ]);
 
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(false);
+    block.receipts[1].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(false);
 
     expectPartialStackedByCycle(poxAddrFP, 1, 1_000_000, chain, deployer);
     expectPartialStackedByCycle(poxAddrFP, 2, undefined, chain, deployer);
@@ -175,11 +193,12 @@ Clarinet.test({
     block = chain.mineEmptyBlock(CYCLE + HALF_CYCLE - 1);
     // try to extend to cycle 3 early
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);
-    assertEquals(block.height, CYCLE + HALF_CYCLE + 4);
+    assertEquals(block.height, CYCLE + HALF_CYCLE + 2);
     // any call to delegate-stack-extend for a user with locked stx fails
     // with an underflow error because stx-account returns always 0
     // for unlock height
-    assertEquals(block.receipts.length, 0);
+    assertEquals(block.receipts.length, 1);
+    block.receipts[0].result.expectErr().expectUint(500); // too early
 
     // extend to cycle 3
     block = chain.mineBlock([delegateStackStx(wallet_1, wallet_2)]);

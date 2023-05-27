@@ -23,6 +23,7 @@ coverage
 *.lcov
 
 Mainnet.toml
+Testnet.toml
 
 # nyc test coverage
 .nyc_output

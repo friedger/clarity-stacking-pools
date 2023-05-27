@@ -41,7 +41,8 @@ Clarinet.test({
     block = chain.mineBlock([delegateStackStxMany([wallet_1], deployer)]);
     block.receipts[0].result
       .expectOk()
-      .expectList()[0]
+      .expectTuple()
+      ["locking-result"].expectList()[0]
       .expectErr()
       .expectUint(FpErrors.PoxAddressDeactivated);
   },

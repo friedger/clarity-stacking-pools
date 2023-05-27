@@ -36,7 +36,8 @@ Clarinet.test({
     const deployer = accounts.get("deployer")!;
     const wallet_1 = accounts.get("wallet_1")!;
     const wallet_2 = accounts.get("wallet_2")!;
-    const poxPoolsSelfServiceContract = deployer.address + ".pox-pool-self-service";
+    const poxPoolsSelfServiceContract =
+      deployer.address + ".pox-pool-self-service";
     const helperContract = deployer.address + ".helper";
 
     // try without any allowance
@@ -58,7 +59,10 @@ Clarinet.test({
       helperDelegateStx(20_000_000_000_000, wallet_1),
     ]);
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[1].result.expectOk().expectBool(true);
+    block.receipts[1].result
+      .expectOk()
+      .expectTuple()
+      ["commit-result"].expectBool(true);
     expectTotalStackedByCycle(1, 0, 19_999_999_000_000, chain, deployer);
   },
 });

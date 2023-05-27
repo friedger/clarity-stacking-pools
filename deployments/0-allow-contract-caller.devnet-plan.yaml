@@ -18,10 +18,17 @@ plan:
             cost: 10000
         - contract-call:
             contract-id: ST000000000000000000002AMW42H.pox-3
+            expected-sender: ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
+            method: allow-contract-caller
+            parameters:
+              - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pools-1-cycle"
+              - none
+            cost: 10000
+        - contract-call:
+            contract-id: ST000000000000000000002AMW42H.pox-3
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             method: allow-contract-caller
             parameters:
               - "'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.pox-pools-1-cycle"
               - none
             cost: 10000
-      epoch: "2.1"

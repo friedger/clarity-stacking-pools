@@ -5,6 +5,9 @@
 (define-public (get-user-data (user principal))
   (ok (print (contract-call? .pox-pools-1-cycle get-user-data user))))
 
+(define-public (get-status (pool principal) (user principal) (reward-cycle uint))
+  (ok (print (contract-call? .pox-pools-1-cycle get-status pool user reward-cycle))))
+
 (define-public (get-stx-account (user principal))
   (ok (print (contract-call? .pox-pools-1-cycle get-stx-account user))))
 

@@ -5,6 +5,7 @@ import {
 import {
   delegateStackStx,
   delegateStx,
+  getNotLockedForCycle,
   getStatus,
   getUserData,
 } from "./client/pox-pools-1-cycle-client.ts";
@@ -143,5 +144,25 @@ Clarinet.test({
       .hashbytes.expectBuff(
         hexToBytes("000102030405060708090a0b0c0d0e0f00010203")
       );
+  },
+});
+
+Clarinet.test({
+  name: "Ensure that unlock height checks are correct",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    let wallet_1 = accounts.get("wallet_1")!;
+
+    let response = getNotLockedForCycle(10, 1, chain, wallet_1);
+    response.result.expectBool(true);
+    response = getNotLockedForCycle(1050, 1, chain, wallet_1);
+    response.result.expectBool(true);
+    response = getNotLockedForCycle(1051, 1, chain, wallet_1);
+    response.result.expectBool(false);
+    response = getNotLockedForCycle(2100, 1, chain, wallet_1);
+    response.result.expectBool(false);
+    response = getNotLockedForCycle(2100, 2, chain, wallet_1);
+    response.result.expectBool(true);
+    response = getNotLockedForCycle(2101, 2, chain, wallet_1);
+    response.result.expectBool(false);
   },
 });

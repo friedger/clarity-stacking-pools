@@ -23,7 +23,7 @@
     "vitest-github-actions-reporter": "^0.9.0"
   },
   "dependencies": {
-    "@hirosystems/stacks-devnet-js": "file:../../hirosystems/clarinet/components/stacks-devnet-js",
+    "@hirosystems/stacks-devnet-js": "^1.6.2",
     "@stacks/common": "^6.0.0",
     "@stacks/network": "^6.0.0",
     "@stacks/stacking": "^6.0.2",
