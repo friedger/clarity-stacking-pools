@@ -1,12 +1,12 @@
-# Wrapper Contracts for pox-2 contract
+# Wrapper Contracts for pox-3 contract
 
-This repo contains smart contracts that are wrapping contract calls to the pox-2 contract of the Stacks blockchain. The pox-2 contract is the heart of [Proof of Transfer (PoX)](https://www.stacks.co/learn/stacking).
+This repo contains smart contracts that are wrapping contract calls to the pox-3 contract of the Stacks blockchain. The pox-3 contract is the heart of [Proof of Transfer (PoX)](https://www.stacks.co/learn/stacking).
 
 There are two different wrapper contracts:
 * `pox-pools-1-cycle`: A generic contract for stacking pools that enables custom payout addresses for pool members. Deployed on mainnet at `SP001SFSMC2ZY76PD4M68P3WGX154XCH7NE3TYMX.pox-pools-1-cycle`.
 * `pox-pool-self-service`: A self-service contract where the smart contract is the pool operator. Deployed on mainnet at `SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP.pox-fast-pool-v1`.
 
-Both contracts require one transaction to allow the contract to handle the user's stacking rights (call to `pox-2.allow-contract-caller`). Furthermore, both contracts implement the same stacking rights protection with `allow-contract-caller` and `disallow-contract-caller` functions.
+Both contracts require one transaction to allow the contract to handle the user's stacking rights (call to `pox-3.allow-contract-caller`). Furthermore, both contracts implement the same stacking rights protection with `allow-contract-caller` and `disallow-contract-caller` functions.
 
 A web UI for these contracts exists on [lockstack.com](https://github.com/hirosystems/btcweb3).
 
@@ -25,9 +25,9 @@ Users can increase the delegated amount of STX for the next cycle at any time be
 ### Function `delegate-stx`
 Users call this function to delegate the stacking rights to a pool. Users can revoke delegation and stx tokens will unlock at the end of the next cycle. Locking period is fixed to one cycle.
 
-This function revokes previous delegations to a pool (calls `pox-2.revoke-delegate-stx`) so that only one transaction is required to update stacking delegation.
+This function revokes previous delegations to a pool (calls `pox-3.revoke-delegate-stx`) so that only one transaction is required to update stacking delegation.
 
-In addition, the user has to provide a reward address that pool operators should use for reward distribution. All other arguments are passed to directly to the `pox-2.delegate-stx` function.
+In addition, the user has to provide a reward address that pool operators should use for reward distribution. All other arguments are passed to directly to the `pox-3.delegate-stx` function.
 
 ### Pool operator functions `delegate-stack-stx` and `delegate-stack-stx-simple`
 Can be called by pool operator only.
