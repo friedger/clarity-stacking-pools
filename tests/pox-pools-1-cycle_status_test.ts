@@ -29,7 +29,7 @@ Clarinet.test({
     const poxPools1CycleContract = pool_1.address + ".pox-pools-1-cycle";
 
     // info before delegation
-    let response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
+    let response = getStatus(pool_1.address, wallet_1.address, 1, chain, wallet_1);
     response.result.expectErr().expectUint(Errors.NoStackerInfo);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
@@ -63,7 +63,7 @@ Clarinet.test({
     block.receipts[3].result.expectOk();
 
     // info before stacking
-    response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
+    response = getStatus(pool_1.address, wallet_1.address, 1, chain, wallet_1);
     response.result.expectErr().expectUint(Errors.NoStackerInfo);
 
     response = getUserData(wallet_1.address, chain, wallet_1);
@@ -93,7 +93,7 @@ Clarinet.test({
       .expectList()
       .map((info: any) => info.expectOk());
 
-    response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
+    response = getStatus(pool_1.address, wallet_1.address, 1, chain, wallet_1);
     let info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple();
     info["user-info"].expectTuple();
@@ -116,7 +116,7 @@ Clarinet.test({
       .expectErr()
       .expectInt(PoxErrors.StackingThresholdNotMet);
 
-    response = getStatus(pool_1.address, wallet_1.address, chain, wallet_1);
+    response = getStatus(pool_1.address, wallet_1.address, 1, chain, wallet_1);
     info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple();
     info["user-info"].expectTuple();
@@ -132,7 +132,7 @@ Clarinet.test({
       );
 
     // get status with wrong pool address
-    response = getStatus(pool_2.address, wallet_1.address, chain, wallet_1);
+    response = getStatus(pool_2.address, wallet_1.address, 1, chain, wallet_1);
     info = response.result.expectOk().expectTuple();
     info["total"].expectUint(0);
 

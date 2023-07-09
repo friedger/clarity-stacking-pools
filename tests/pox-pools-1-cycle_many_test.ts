@@ -143,7 +143,7 @@ Clarinet.test({
     members = statusList["status-list"].expectNone();
 
     // verify user status
-    response = getStatus(pool_1.address, wallet_1.address, chain, deployer);
+    response = getStatus(pool_1.address, wallet_1.address, 2, chain, deployer);
 
     let info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
@@ -157,7 +157,7 @@ Clarinet.test({
 
     info["total"].expectUint(10_000_000_000_000);
 
-    response = getStatus(pool_2.address, wallet_2.address, chain, deployer);
+    response = getStatus(pool_2.address, wallet_2.address, 2, chain, deployer);
 
     info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
@@ -210,7 +210,7 @@ Clarinet.test({
     members = statusList["status-list"].expectNone();
 
     // verify user status
-    response = getStatus(pool_1.address, wallet_1.address, chain, deployer);
+    response = getStatus(pool_1.address, wallet_1.address, 2, chain, deployer);
 
     let info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);
@@ -224,7 +224,7 @@ Clarinet.test({
 
     info["total"].expectUint(10_000_000_000_000);
 
-    response = getStatus(pool_2.address, wallet_2.address, chain, deployer);
+    response = getStatus(pool_2.address, wallet_2.address, 2, chain, deployer);
 
     info = response.result.expectOk().expectTuple();
     info["stacker-info"].expectTuple()["first-reward-cycle"].expectUint(1);

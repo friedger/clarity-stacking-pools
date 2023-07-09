@@ -1,12 +1,16 @@
 import { Account, Chain, Tx, types } from "../deps.ts";
 
+const user = {
+  address: "ST000000000000000000002AMW42H",
+};
+
 export function allowContractCaller(
   contractCaller: string,
   untilBurnHt: number | undefined,
   user: Account
 ) {
   return Tx.contractCall(
-    "ST000000000000000000002AMW42H.pox-3",
+    "SP000000000000000000002Q6VF78.pox-3",
     "allow-contract-caller",
     [
       types.principal(contractCaller),
@@ -30,10 +34,12 @@ export function delegateStx(amount: number, delegateTo: string, user: Account) {
   );
 }
 
-
-export function delegateStackExtend(stacker: Account,
+export function delegateStackExtend(
+  stacker: Account,
   poxAddr: { version: string; hashbytes: string },
-  extendedCount: number, user: Account) {
+  extendedCount: number,
+  user: Account
+) {
   return Tx.contractCall(
     "ST000000000000000000002AMW42H.pox-3",
     "delegate-stack-extend",
@@ -121,17 +127,13 @@ export function getPoxInfo(chain: Chain, user: Account) {
 }
 
 export async function asyncExpectCurrentCycle(chain: Chain, cycle: number) {
-  const poxInfoResponse = await getPoxInfo(chain, {
-    address: "ST000000000000000000002AMW42H",
-  });
+  const poxInfoResponse = await getPoxInfo(chain, user);
   const poxInfo = poxInfoResponse.result.expectOk().expectTuple();
   poxInfo["reward-cycle-id"].expectUint(cycle);
 }
 
 export async function getCycleLength(chain: Chain) {
-  const poxInfoResponse = await getPoxInfo(chain, {
-    address: "ST000000000000000000002AMW42H",
-  });
+  const poxInfoResponse = await getPoxInfo(chain, user);
   const poxInfo = poxInfoResponse.result.expectOk().expectTuple();
 
   const CYCLE = 1050;
@@ -141,6 +143,6 @@ export async function getCycleLength(chain: Chain) {
   return {
     CYCLE,
     HALF_CYCLE: CYCLE / 2,
-    PREPARE_CYCLE_LENGTH
+    PREPARE_CYCLE_LENGTH,
   };
 }

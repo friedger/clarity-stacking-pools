@@ -128,13 +128,14 @@ export function getTotal(
 export function getStatus(
   poolAddress: string,
   userAddress: string,
+  cycle: number,
   chain: Chain,
   user: Account
 ) {
   return chain.callReadOnlyFn(
     "pox-pools-1-cycle",
     "get-status",
-    [types.principal(poolAddress), types.principal(userAddress)],
+    [types.principal(poolAddress), types.principal(userAddress), types.uint(cycle)],
     user.address
   );
 }

@@ -8,7 +8,7 @@ export type {
     Chain,
     Tx,
     types,
-  } from "https://deno.land/x/clarinet@v1.5.4/index.ts";
+  } from "https://deno.land/x/clarinet@v1.6.0/index.ts";
 
   export {
     assertEquals,

@@ -8,7 +8,7 @@ Clarinet.test({
     let wallet_1 = accounts.get("wallet_1")!;
     const { HALF_CYCLE } = await getCycleLength(chain);
 
-    chain.mineEmptyBlock(HALF_CYCLE + 1);
+    chain.mineEmptyBlock(HALF_CYCLE);
 
     let block = chain.mineBlock([
       Tx.contractCall(
@@ -22,7 +22,7 @@ Clarinet.test({
 
     // verify results for run-job
     block.receipts[0].result.expectOk().expectBool(true);
-    block.receipts[0].result.expectOk().expectBool(true);
+    block.receipts[1].result.expectOk().expectBool(true);
   },
 });
 
@@ -33,7 +33,7 @@ Clarinet.test({
     let wallet_1 = accounts.get("wallet_1")!;
     const { HALF_CYCLE } = await getCycleLength(chain);
 
-    chain.mineEmptyBlock(HALF_CYCLE);
+    chain.mineEmptyBlock(HALF_CYCLE - 1);
 
     let block = chain.mineBlock([
       Tx.contractCall(
@@ -59,7 +59,7 @@ Clarinet.test({
     let wallet_1 = accounts.get("wallet_1")!;
     const { HALF_CYCLE } = await getCycleLength(chain);
 
-    chain.mineEmptyBlock(HALF_CYCLE + 1);
+    chain.mineEmptyBlock(HALF_CYCLE);
 
     let block = chain.mineBlock([
       Tx.contractCall("fp-auto-extend", "run-job", [], deployer.address),
