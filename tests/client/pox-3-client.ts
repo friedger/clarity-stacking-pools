@@ -10,7 +10,7 @@ export function allowContractCaller(
   user: Account
 ) {
   return Tx.contractCall(
-    "SP000000000000000000002Q6VF78.pox-3",
+    "ST000000000000000000002AMW42H.pox-3",
     "allow-contract-caller",
     [
       types.principal(contractCaller),

@@ -29,4 +29,11 @@ plan:
             path: contracts/testing/helper.clar
             anchor-block-only: true
             clarity-version: 2
+        - contract-publish:
+            contract-name: payout-self-service
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 70490
+            path: contracts/payout/payout-self-service.clar
+            anchor-block-only: true
+            clarity-version: 2
       epoch: "2.4"

@@ -1,0 +1,17 @@
+---
+id: 0
+name: Mainnet deployment
+network: mainnet
+stacks-node: "https://api.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoin.blockstack.com:8332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-publish:
+            contract-name: fp-auto-extend-1
+            expected-sender: SP21YTSM60CAY6D011EZVEVNKXVW8FVZE198XEFFP
+            cost: 20000
+            path: contracts/fast-pool/fp-auto-extend.clar
+            anchor-block-only: true
+            clarity-version: 2

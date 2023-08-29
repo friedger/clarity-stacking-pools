@@ -1,19 +1,19 @@
 export type {
     Account,
     ReadOnlyFn,
-  } from "https://deno.land/x/clarinet@v1.5.4/index.ts";
+  } from "https://deno.land/x/clarinet@v1.7.1/index.ts";
 
   export {
     Clarinet,
     Chain,
     Tx,
     types,
-  } from "https://deno.land/x/clarinet@v1.6.0/index.ts";
+  } from "https://deno.land/x/clarinet@v1.7.1/index.ts";
 
   export {
     assertEquals,
     assertObjectMatch,
-  } from "https://deno.land/std@0.182.0/testing/asserts.ts";
+  } from "https://deno.land/std@0.200.0/testing/asserts.ts";
 
   export {
     beforeEach,
