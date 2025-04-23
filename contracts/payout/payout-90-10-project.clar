@@ -1,13 +1,17 @@
 ;; send-many with 90:10 to recipient and project
-(define-constant deployer tx-sender)
+(define-data-var admin principal tx-sender)
 (define-data-var project principal tx-sender)
 (define-public (set-project (new-project principal))
   (begin
-    (asserts! (is-eq contract-caller deployer) (err u401))
+    (asserts! (is-eq contract-caller (var-get admin)) (err u401))
     (ok (var-set project new-project))))
+(define-public (set-admin (new-admin principal))
+  (begin
+    (asserts! (is-eq contract-caller (var-get admin)) (err u401))
+    (ok (var-set admin new-admin))))
 (define-private (send-stx (recipient {to: principal, ustx: uint, memo: (buff 34)}))
   (let ((amount (get ustx recipient))
-        (amount-1 (/ (* amount u1000) u900))
+        (amount-1 (/ (* amount u900) u1000))
         (amount-2 (- amount amount-1)))
   (try! (stx-transfer-memo? amount-1 tx-sender (get to recipient) (get memo recipient)))
   (stx-transfer? amount-2 tx-sender (var-get project))))
