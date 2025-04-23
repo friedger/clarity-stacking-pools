@@ -54,7 +54,7 @@ plan:
             emulated-sender: SP3C0TCQS0C0YY8E0V3EJ7V4X9571885D44M8EFWF
             path: "./.cache/requirements/SP3C0TCQS0C0YY8E0V3EJ7V4X9571885D44M8EFWF.arkadiko-automation-trait-v1.clar"
             clarity-version: 1
-      epoch: "2.1"
+      epoch: "2.05"
     - id: 1
       transactions:
         - emulated-contract-publish:
@@ -66,33 +66,13 @@ plan:
     - id: 2
       transactions:
         - emulated-contract-publish:
-            contract-name: pox4-self-service-v3
+            contract-name: payout-90-10-project
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/pox4-self-service.clar
+            path: contracts/payout/payout-90-10-project.clar
             clarity-version: 2
         - emulated-contract-publish:
-            contract-name: fp-auto-extend
+            contract-name: pox4-self-service-multi
             emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/fast-pool/fp-auto-extend.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: pox4-pools
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/pox4-pools.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: helper
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/testing/helper.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: payout-self-service
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: contracts/payout/payout-self-service.clar
-            clarity-version: 2
-        - emulated-contract-publish:
-            contract-name: pox4-pools_flow_test
-            emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            path: tests/pox4-pools_flow_test.clar
+            path: contracts/pox4-self-service-multi.clar
             clarity-version: 2
       epoch: "2.5"

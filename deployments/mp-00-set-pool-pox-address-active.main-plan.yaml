@@ -1,0 +1,17 @@
+---
+id: 0
+name: Mainnet set active
+network: mainnet
+stacks-node: "https://api.hiro.so"
+bitcoin-node: "http://blockstack:blockstacksystem@bitcoin.blockstack.com:8332"
+plan:
+  batches:
+    - id: 0
+      transactions:
+        - contract-call:
+            contract-id: SPMPMA1V6P430M8C91QS1G9XJ95S59JS1TZFZ4Q4.pox4-multi-pool-v1
+            expected-sender: SPMPMA1V6P430M8C91QS1G9XJ95S59JS1TZFZ4Q4
+            method: set-pool-pox-address-active
+            parameters:
+              - "{version: 0x04, hashbytes: 0xf39f20b9d2202a705c99c4f8ee8920653473bc1a}"
+            cost: 1000
